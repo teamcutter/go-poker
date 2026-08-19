@@ -1,0 +1,1503 @@
+/* ============================================================
+   Design tokens
+   ============================================================ */
+:root {
+  color-scheme: dark;
+
+  --bg: #0a0b0d;
+  --bg-lift: #0f1114;
+  --surface: #14171b;
+  --surface-2: #1a1e23;
+  --surface-3: #232830;
+  --border: #22262d;
+  --border-strong: #333944;
+
+  --text: #f3f5f8;
+  --text-dim: #939aa5;
+  --text-faint: #626873;
+
+  --accent: #2fbf71;
+  --accent-hi: #3ad584;
+  --accent-soft: rgba(47, 191, 113, 0.14);
+  --gold: #e0b04c;
+  --gold-soft: rgba(224, 176, 76, 0.14);
+  --danger: #e5484d;
+  --danger-soft: rgba(229, 72, 77, 0.13);
+  --info: #4c8df6;
+
+  --suit-spade: #14171b;
+  --suit-heart: #d63b3b;
+  --suit-diamond: #2c7be5;
+  --suit-club: #1e9e62;
+
+  --r-xs: 8px;
+  --r-sm: 11px;
+  --r-md: 15px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+
+  --sh-1: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --sh-2: 0 10px 28px -10px rgba(0, 0, 0, 0.7);
+  --sh-3: 0 28px 64px -16px rgba(0, 0, 0, 0.85);
+
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-t: env(safe-area-inset-top, 0px);
+
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(47, 191, 113, 0.07), transparent 60%),
+    var(--bg);
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(16px + var(--safe-t)) 18px calc(28px + var(--safe-b));
+}
+
+main.is-fixed {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ============================================================
+   Typography helpers
+   ============================================================ */
+.muted {
+  color: var(--text-dim);
+}
+
+.faint {
+  color: var(--text-faint);
+}
+
+.eyebrow {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 22px 2px 10px;
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.text-gold {
+  color: var(--gold);
+}
+
+/* ============================================================
+   Layout helpers
+   ============================================================ */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.space-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mt-8 {
+  margin-top: 8px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* ============================================================
+   Surfaces
+   ============================================================ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+}
+
+/* ============================================================
+   Buttons
+   ============================================================ */
+.btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  padding: 13px 18px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: #05140c;
+  background: var(--accent);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: transform 0.12s var(--ease), background 0.15s ease, opacity 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-primary {
+  background: var(--accent);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--accent-hi);
+}
+
+.btn-secondary {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-dim);
+  border-color: var(--border-strong);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-gold {
+  background: var(--gold);
+  color: #1a1204;
+}
+
+.btn-sm {
+  padding: 9px 14px;
+  font-size: 13.5px;
+  border-radius: var(--r-sm);
+}
+
+.btn-lg {
+  padding: 16px 22px;
+  font-size: 16.5px;
+  border-radius: var(--r-md);
+}
+
+.btn-pill {
+  border-radius: var(--r-pill);
+}
+
+/* ============================================================
+   Inputs
+   ============================================================ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.input,
+select.input {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  background: var(--bg-lift);
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.input::placeholder {
+  color: var(--text-faint);
+}
+
+.input:focus {
+  border-color: var(--border-strong);
+  background: var(--surface-2);
+}
+
+.input-code {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  padding: 15px 14px;
+}
+
+/* Segmented control */
+.segmented {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-lift);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+
+.segmented button {
+  flex: 1;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 650;
+  padding: 9px 4px;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.segmented button.on {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.segmented button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.bankroll-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  padding: 5px 12px 5px 7px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.broke-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--gold-soft);
+  border: 1px solid rgba(224, 176, 76, 0.3);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  margin-bottom: 12px;
+}
+
+.broke-banner p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  flex: 1;
+}
+
+.broke-banner b {
+  display: block;
+  color: var(--gold);
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+/* ============================================================
+   Tags / pills / badges
+   ============================================================ */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 4px 9px;
+  border-radius: var(--r-xs);
+  background: var(--surface-3);
+  color: var(--text-dim);
+  border: none;
+}
+
+.tag-code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.16em;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tag-live {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.tag-off {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.tag-live .dot {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* ============================================================
+   Feedback
+   ============================================================ */
+.error-banner {
+  background: var(--danger-soft);
+  color: #ff9c9e;
+  border: 1px solid rgba(229, 72, 77, 0.28);
+  border-radius: var(--r-md);
+  padding: 11px 13px;
+  font-size: 13.5px;
+  margin-bottom: 12px;
+}
+
+.spinner {
+  border: 2.5px solid var(--surface-3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 14px;
+  padding: 32px 16px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+}
+
+/* ============================================================
+   Avatars
+   ============================================================ */
+.avatar {
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  flex: none;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+/* ============================================================
+   Playing cards
+   ============================================================ */
+.pcard {
+  --w: 46px;
+  width: var(--w);
+  height: calc(var(--w) * 1.4);
+  border-radius: calc(var(--w) * 0.13);
+  flex: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f7f8fa;
+  box-shadow: var(--sh-1);
+  overflow: hidden;
+}
+
+.pcard-xs {
+  --w: 24px;
+}
+
+.pcard-sm {
+  --w: 34px;
+}
+
+.pcard-md {
+  --w: 48px;
+}
+
+.pcard-lg {
+  --w: 66px;
+}
+
+.pcard-rank {
+  font-size: calc(var(--w) * 0.52);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.pcard-rank-wide {
+  font-size: calc(var(--w) * 0.42);
+  letter-spacing: -0.08em;
+}
+
+.pcard-suit {
+  font-size: calc(var(--w) * 0.36);
+  line-height: 1;
+  margin-top: calc(var(--w) * 0.04);
+}
+
+.pcard-s {
+  color: var(--suit-spade);
+}
+
+.pcard-h {
+  color: var(--suit-heart);
+}
+
+.pcard-d {
+  color: var(--suit-diamond);
+}
+
+.pcard-c {
+  color: var(--suit-club);
+}
+
+.pcard-back {
+  background: linear-gradient(150deg, #2a3038, #171a1f 60%);
+  box-shadow: var(--sh-1), inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.pcard-back::after {
+  content: '';
+  position: absolute;
+  inset: calc(var(--w) * 0.09);
+  border-radius: calc(var(--w) * 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.045) 0 2px,
+    transparent 2px 5px
+  );
+}
+
+.pcard-muted {
+  filter: grayscale(0.85) brightness(0.55);
+  opacity: 0.75;
+}
+
+/* No transform here: the hero cards set their own rotation at higher
+   specificity, so the win state must read purely from the ring and glow. */
+.pcard-win {
+  box-shadow: 0 0 0 2px var(--gold), 0 8px 22px -6px rgba(224, 176, 76, 0.7);
+  z-index: 1;
+  animation: win-pulse 1.5s ease-in-out 2;
+}
+
+@keyframes win-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--gold), 0 8px 22px -6px rgba(224, 176, 76, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--gold), 0 10px 30px -3px rgba(224, 176, 76, 0.95);
+  }
+}
+
+.pcard-deal {
+  animation: deal 0.34s var(--ease) backwards;
+}
+
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.9) rotate(-5deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Half-turn from edge-on: reads as a flip without a second face in the DOM. */
+.pcard-reveal {
+  animation: reveal 0.42s var(--ease) backwards;
+  backface-visibility: hidden;
+}
+
+@keyframes reveal {
+  0% {
+    transform: perspective(320px) rotateY(-88deg);
+    opacity: 0.35;
+  }
+  65% {
+    transform: perspective(320px) rotateY(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* A winning card also deals or flips in, so both animations must be listed —
+   a bare `animation` on .pcard-win would otherwise replace the entrance. */
+.pcard-deal.pcard-win {
+  animation: deal 0.34s var(--ease) backwards, win-pulse 1.5s ease-in-out 2;
+}
+
+.pcard-reveal.pcard-win {
+  animation: reveal 0.42s var(--ease) backwards, win-pulse 1.5s ease-in-out 2;
+}
+
+/* ============================================================
+   Login screen
+   ============================================================ */
+.login {
+  justify-content: center;
+  gap: 0;
+  text-align: center;
+  min-height: 100%;
+}
+
+.login-mark {
+  width: 82px;
+  height: 82px;
+  border-radius: 24px;
+  background: linear-gradient(160deg, var(--surface-3), var(--surface));
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  line-height: 1;
+  color: var(--text);
+  box-shadow: var(--sh-2);
+  margin-bottom: 22px;
+}
+
+.login-title {
+  font-size: 34px;
+  font-weight: 780;
+  letter-spacing: -0.035em;
+}
+
+.login-sub {
+  color: var(--text-dim);
+  max-width: 270px;
+  margin: 10px 0 26px;
+  font-size: 14.5px;
+}
+
+.login-actions {
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-note {
+  color: var(--text-faint);
+  font-size: 12.5px;
+  margin-top: 14px;
+  max-width: 280px;
+}
+
+.login-features {
+  display: flex;
+  gap: 18px;
+  margin-top: 34px;
+  color: var(--text-faint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   Lobby screen
+   ============================================================ */
+.lobby-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.lobby-title {
+  font-size: 27px;
+  font-weight: 760;
+  letter-spacing: -0.035em;
+}
+
+.lobby-sub {
+  color: var(--text-dim);
+  font-size: 13.5px;
+  margin-top: 2px;
+}
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-lift);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 4px;
+}
+
+.stepper button {
+  appearance: none;
+  border: none;
+  background: var(--surface-3);
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-xs);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.12s var(--ease), opacity 0.15s ease;
+}
+
+.stepper button:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.stepper button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.stepper-value {
+  flex: 1;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.table-item {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 13px 14px;
+  margin-bottom: 9px;
+  cursor: pointer;
+  transition: transform 0.12s var(--ease), border-color 0.15s ease, background 0.15s ease;
+}
+
+.table-item:active:not(:disabled) {
+  transform: scale(0.985);
+  background: var(--surface-2);
+}
+
+.table-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.table-item-badge {
+  width: 46px;
+  height: 46px;
+  border-radius: var(--r-md);
+  background: var(--bg-lift);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  flex: none;
+}
+
+.table-item-badge b {
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+}
+
+.table-item-badge span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.table-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.table-item-name {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.seat-tag {
+  margin-left: 7px;
+  font-size: 9.5px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: var(--gold-soft);
+  border-radius: var(--r-xs);
+  padding: 2px 6px;
+  vertical-align: middle;
+}
+
+.seat-count {
+  font-weight: 700;
+}
+
+/* Full is carried by the count itself rather than an extra badge. */
+.seat-count.full {
+  color: var(--danger);
+}
+
+.table-item-meta {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.seat-pips {
+  display: flex;
+  gap: 3px;
+}
+
+.seat-pip {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--surface-3);
+}
+
+.seat-pip.on {
+  background: var(--accent);
+}
+
+.chev {
+  color: var(--text-faint);
+  font-size: 19px;
+  flex: none;
+}
+
+/* ============================================================
+   Table screen — shell
+   ============================================================ */
+.table-screen {
+  padding: calc(10px + var(--safe-t)) 14px calc(12px + var(--safe-b));
+  gap: 12px;
+}
+
+.table-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.table-topbar-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.icon-btn {
+  appearance: none;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text-dim);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  cursor: pointer;
+  flex: none;
+  transition: transform 0.12s var(--ease);
+}
+
+.icon-btn:active {
+  transform: scale(0.92);
+}
+
+/* ============================================================
+   Table screen — opponents strip (above the board)
+   ============================================================ */
+.opponents {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-height: 92px;
+}
+
+.opponent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 68px;
+  padding-top: 6px;
+}
+
+.opponent-avatar {
+  position: relative;
+  border-radius: 50%;
+  padding: 2px;
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.opponent-turn .opponent-avatar {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px -3px rgba(47, 191, 113, 0.65);
+  animation: turn-glow 1.9s ease-in-out infinite;
+}
+
+@keyframes turn-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 18px -3px rgba(47, 191, 113, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 24px 0 rgba(47, 191, 113, 0.25);
+  }
+}
+
+.opponent-folded {
+  opacity: 0.38;
+}
+
+.opponent-name {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--text-dim);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opponent-stack {
+  font-size: 12.5px;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.opponent-stack.allin {
+  color: var(--danger);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.turn-bar {
+  width: 44px;
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.turn-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.25s linear;
+}
+
+.turn-bar.low i {
+  background: var(--danger);
+}
+
+/* The amount owed is the number you act on, so it gets the loudest treatment
+   in this slot — the shot clock sits under it as a secondary readout. */
+.hero-tocall {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 12px;
+  border-radius: var(--r-md);
+  line-height: 1.1;
+}
+
+.hero-tocall.owed {
+  background: var(--gold-soft);
+  border: 1px solid rgba(224, 176, 76, 0.35);
+}
+
+.tocall-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.hero-tocall.owed .tocall-label {
+  color: var(--gold);
+  opacity: 0.85;
+}
+
+.tocall-amount {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  color: var(--gold);
+}
+
+.tocall-clock {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+
+.tocall-clock.low {
+  color: var(--danger);
+}
+
+.opponent-cards {
+  display: flex;
+  gap: 2px;
+  min-height: 34px;
+  align-items: center;
+}
+
+.opponent-empty .opponent-slot {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px dashed var(--border-strong);
+}
+
+.opponent-empty .opponent-name {
+  color: var(--text-faint);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.badge-dealer {
+  position: absolute;
+  bottom: -2px;
+  right: -4px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+}
+
+.badge-win {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  font-size: 15px;
+  line-height: 1;
+}
+
+/* Chips committed on the current street */
+.street-bet {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(224, 176, 76, 0.35);
+  color: var(--gold);
+  border-radius: var(--r-pill);
+  padding: 1px 7px;
+  font-size: 10.5px;
+  font-weight: 750;
+  animation: rise 0.25s var(--ease) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ============================================================
+   Table screen — board (5 community slots)
+   ============================================================ */
+.board-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: linear-gradient(180deg, var(--surface-2), var(--bg-lift));
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  padding: 18px 12px;
+}
+
+.pot {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  padding: 5px 13px 5px 7px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.pot-pop {
+  animation: pot-pop 0.34s var(--ease);
+}
+
+@keyframes pot-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.09);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.pot-chip {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2.5px dashed rgba(0, 0, 0, 0.42);
+  flex: none;
+}
+
+.street-bet .pot-chip {
+  width: 9px;
+  height: 9px;
+  border-width: 1.5px;
+}
+
+.pot-label {
+  color: var(--text-faint);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.board {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  align-items: center;
+}
+
+.board-slot {
+  width: 48px;
+  height: calc(48px * 1.4);
+  border-radius: 6px;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  flex: none;
+}
+
+.phase-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.winner-banner {
+  background: var(--gold-soft);
+  color: var(--gold);
+  border: 1px solid rgba(224, 176, 76, 0.3);
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  animation: rise 0.35s var(--ease) both;
+}
+
+/* ============================================================
+   Table screen — hero row: cards left, stack + actions right
+   ============================================================ */
+.hero-row {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.hero-hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.hero-cards {
+  display: flex;
+  gap: 4px;
+  flex: none;
+  align-items: center;
+}
+
+.hand-label {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.opponent-hand {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  text-align: center;
+  line-height: 1.1;
+}
+
+.hero-cards .pcard:first-child {
+  transform: rotate(-4deg);
+}
+
+.hero-cards .pcard:last-child {
+  transform: rotate(4deg);
+}
+
+.hero-side {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 9px;
+}
+
+.hero-stack-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hero-stack {
+  font-size: 22px;
+  font-weight: 770;
+  letter-spacing: -0.035em;
+  line-height: 1;
+}
+
+.action-bar {
+  display: flex;
+  gap: 7px;
+}
+
+.action-bar .btn {
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 6px;
+  font-size: 14px;
+}
+
+.action-bar .btn small {
+  font-size: 12.5px;
+  font-weight: 750;
+  opacity: 0.9;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.waiting-strip {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-faint);
+  padding: 10px 0;
+}
+
+/* ============================================================
+   Bottom sheet
+   ============================================================ */
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fade 0.2s ease both;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+  padding: 10px 18px calc(20px + var(--safe-b));
+  box-shadow: var(--sh-3);
+  animation: sheet-up 0.28s var(--ease) both;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.sheet-grabber {
+  width: 38px;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  margin: 0 auto 14px;
+}
+
+.sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+
+.bet-amount {
+  text-align: center;
+  font-size: 38px;
+  font-weight: 780;
+  letter-spacing: -0.045em;
+  line-height: 1.1;
+}
+
+.bet-amount-sub {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.bet-steps {
+  display: flex;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.bet-steps .btn {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 4px;
+  font-size: 14px;
+}
+
+/* ============================================================
+   Motion preferences
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    /* Also zero the stagger: with `backwards` fill, an inline animation-delay
+       would otherwise hold cards in their hidden start state. `!important`
+       beats the inline style that sets it. */
+    animation-delay: 0ms !important;
+  }
+}
