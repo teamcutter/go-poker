@@ -20,5 +20,4 @@ func (c Claims) Expired(now time.Time) bool {
 type Manager interface {
 	Create(claims Claims) (string, error)
 	Parse(token string) (Claims, error)
-	PublicID(userID int64) string
 }

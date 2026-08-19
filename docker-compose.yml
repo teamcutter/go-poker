@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: petly
-      POSTGRES_PASSWORD: petly
-      POSTGRES_DB: petly
+      POSTGRES_USER: ${POSTGRES_USER:-go_poker}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-go_poker}
+      POSTGRES_DB: ${POSTGRES_DB:-go_poker}
     ports:
       - "5432:5432"
     volumes:
-      - petly_pg:/var/lib/postgresql/data
+      - go_poker_pg:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U petly -d petly"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-go_poker} -d $${POSTGRES_DB:-go_poker}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -34,9 +34,9 @@ services:
     environment:
       PORT: "8080"
       ENV: ${ENV:-development}
-      DATABASE_URL: postgres://petly:petly@postgres:5432/petly?sslmode=disable
-      REDIS_ADDR: redis:6379
-      APP_URL: http://localhost:5173
+      DATABASE_URL: ${DATABASE_URL:-postgres://go_poker:go_poker@postgres:5432/go_poker?sslmode=disable}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      APP_URL: ${APP_URL:-http://localhost:5173}
     ports:
       - "8080:8080"
     depends_on:
@@ -54,4 +54,4 @@ services:
       - backend
 
 volumes:
-  petly_pg:
+  go_poker_pg:

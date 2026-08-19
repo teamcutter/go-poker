@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/teamcutter/go-poker/internal/domain/session"
 	"github.com/teamcutter/go-poker/internal/domain/store"
 	"github.com/teamcutter/go-poker/internal/domain/telegram"
@@ -59,13 +61,14 @@ func (s *Service) Authenticate(ctx context.Context, initData string, tokenTTL ti
 
 	token, err := s.sessions.Create(session.Claims{
 		UserID:    u.ID,
+		PublicID:  u.PublicID,
 		ExpiresAt: s.now().Add(tokenTTL),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create session: %w", err)
 	}
 
-	return &Result{User: u, Token: token, PublicID: s.sessions.PublicID(u.ID)}, nil
+	return &Result{User: u, Token: token, PublicID: u.PublicID}, nil
 }
 
 func (s *Service) createUser(ctx context.Context, tgUser *telegram.User) (*user.User, error) {
@@ -73,6 +76,7 @@ func (s *Service) createUser(ctx context.Context, tgUser *telegram.User) (*user.
 	err := s.tx.Run(ctx, func(ctx context.Context) error {
 		u := &user.User{
 			ID:        tgUser.ID,
+			PublicID:  uuid.NewString(),
 			Username:  tgUser.Username,
 			FirstName: tgUser.FirstName,
 			CreatedAt: s.now(),

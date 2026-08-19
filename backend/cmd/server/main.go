@@ -71,7 +71,7 @@ func run(log *zap.Logger) error {
 	users := postgres.NewUserRepository(db)
 
 	telegramValidator := tginfra.NewValidator(cfg.TelegramBotToken, cfg.TelegramAuthTTL)
-	sessionManager := sess.NewManager(cfg.SessionSecret, cfg.PublicIDSecret, cfg.JWTIssuer, cfg.SessionTTL)
+	sessionManager := sess.NewManager(cfg.SessionSecret, cfg.JWTIssuer, cfg.SessionTTL)
 	limiter := redis.NewRateLimiter(redisClient)
 
 	now := time.Now

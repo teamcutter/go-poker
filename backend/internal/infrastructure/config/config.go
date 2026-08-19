@@ -16,7 +16,6 @@ type Config struct {
 	TelegramBotToken string
 	TelegramAuthTTL  time.Duration
 	SessionSecret    string
-	PublicIDSecret   string
 	SessionTTL       time.Duration
 	JWTIssuer        string
 	AppURL           string
@@ -42,23 +41,16 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Port:             getEnv("PORT", "8080"),
 		Environment:      getEnv("ENV", "development"),
-		PostgresDSN:      getEnv("DATABASE_URL", "postgres://petly:petly@localhost:5432/petly?sslmode=disable"),
+		PostgresDSN:      getEnv("DATABASE_URL", "postgres://go_poker:go_poker@localhost:5432/go_poker?sslmode=disable"),
 		RedisAddr:        getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:    getEnv("REDIS_PASSWORD", ""),
 		TelegramBotToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
 		TelegramAuthTTL:  getDurationEnv("TELEGRAM_AUTH_TTL", 24*time.Hour),
 		SessionSecret:    getEnv("SESSION_SECRET", "change-me-in-production"),
-		PublicIDSecret:   getEnv("PUBLIC_ID_SECRET", ""),
 		SessionTTL:       getDurationEnv("SESSION_TTL", 7*24*time.Hour),
 		JWTIssuer:        getEnv("JWT_ISSUER", "gopoker"),
 		AppURL:           getEnv("APP_URL", "http://localhost:5173"),
 		CORSOrigins:      getListEnv("CORS_ORIGINS"),
-	}
-
-	// Falling back keeps existing deployments working, at the cost of re-coupling
-	// the two lifecycles: rotating SESSION_SECRET would then change player ids.
-	if cfg.PublicIDSecret == "" {
-		cfg.PublicIDSecret = cfg.SessionSecret
 	}
 
 	if cfg.SessionSecret == "change-me-in-production" && cfg.Environment != "development" {

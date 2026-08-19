@@ -41,8 +41,8 @@ Postgres holds **only** the `users` table, for authentication. All poker state �
 - `index.html` must load `telegram-web-app.js`; without it `window.Telegram` is absent and every client silently falls back to `VITE_DEV_TOKEN`, authenticating as one shared account.
 - `VITE_DEV_TOKEN` is gated behind `import.meta.env.DEV` so it cannot reach a production bundle, and `.env` is in `.dockerignore`.
 - The response envelope and error codes must stay stable (the frontend depends on them).
-- Two secrets, two lifecycles: `SESSION_SECRET` signs JWTs and is freely rotatable (it only logs everyone out); `PUBLIC_ID_SECRET` derives `Claims.PublicID` and must not be rotated casually. It falls back to `SESSION_SECRET` when unset.
-- Only `Claims.PublicID` may be published. `Claims.UserID` is the raw Telegram id — the Postgres primary key — and must never reach a client, or every opponent gains a permanent handle on the account.
+- `SESSION_SECRET` signs JWTs and is freely rotatable: rotating it only logs everyone out. It is the sole secret in the auth path.
+- Only `Claims.PublicID` may be published — a random UUID on the user row, carried in the token as `pid` so no lookup is needed per request. `Claims.UserID` is the raw Telegram id, the Postgres primary key, and must never reach a client or every opponent gains a permanent handle on the account.
 
 ## API surface
 `POST /api/auth/telegram`, `GET /healthz`.

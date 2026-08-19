@@ -10,6 +10,7 @@ var ErrNotFound = errors.New("user not found")
 
 type User struct {
 	ID        int64
+	PublicID  string
 	Username  string
 	FirstName string
 	CreatedAt time.Time

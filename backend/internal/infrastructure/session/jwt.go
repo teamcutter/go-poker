@@ -1,9 +1,6 @@
 package session
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"strconv"
 	"time"
@@ -14,45 +11,26 @@ import (
 )
 
 type Manager struct {
-	secret         []byte
-	publicIDSecret []byte
-	issuer         string
-	ttl            time.Duration
-	nowFunc        func() time.Time
+	secret  []byte
+	issuer  string
+	ttl     time.Duration
+	nowFunc func() time.Time
 }
 
-// publicIDSecret is deliberately separate from secret: signing keys should be
-// rotatable at will, but rotating the key that derives player identity would
-// orphan anything ever stored against a player id.
-func NewManager(secret, publicIDSecret, issuer string, ttl time.Duration) *Manager {
-	return &Manager{
-		secret:         []byte(secret),
-		publicIDSecret: []byte(publicIDSecret),
-		issuer:         issuer,
-		ttl:            ttl,
-		nowFunc:        time.Now,
-	}
+func NewManager(secret, issuer string, ttl time.Duration) *Manager {
+	return &Manager{secret: []byte(secret), issuer: issuer, ttl: ttl, nowFunc: time.Now}
 }
 
 type jwtClaims struct {
+	// The published player id, so no database read is needed per request.
+	PublicID string `json:"pid"`
 	jwt.RegisteredClaims
-}
-
-// PublicID is the only identifier ever published. It is derived from the
-// Telegram id so it stays stable per user, but is opaque to other players —
-// broadcasting the raw Telegram id would hand every opponent a permanent,
-// real-world handle for the account. Domain-separated so it can never collide
-// with another use of the same secret.
-func (m *Manager) PublicID(userID int64) string {
-	mac := hmac.New(sha256.New, m.publicIDSecret)
-	mac.Write([]byte("gopoker:public-id:v1:"))
-	mac.Write([]byte(strconv.FormatInt(userID, 10)))
-	return hex.EncodeToString(mac.Sum(nil))[:16]
 }
 
 func (m *Manager) Create(c domainsession.Claims) (string, error) {
 	now := m.nowFunc()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims{
+		PublicID: c.PublicID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    m.issuer,
 			Subject:   strconv.FormatInt(c.UserID, 10),
@@ -90,7 +68,7 @@ func (m *Manager) Parse(raw string) (domainsession.Claims, error) {
 
 	return domainsession.Claims{
 		UserID:    userID,
-		PublicID:  m.PublicID(userID),
+		PublicID:  claims.PublicID,
 		ExpiresAt: claims.ExpiresAt.Time,
 	}, nil
 }
