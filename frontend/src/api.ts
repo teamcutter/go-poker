@@ -91,12 +91,19 @@ export function leaveTable(code: string): Promise<{ left: boolean; bankroll: num
   return post<{ left: boolean; bankroll: number }>(`/api/tables/${code}/leave`)
 }
 
-export function getWallet(): Promise<{ bankroll: number }> {
-  return request<{ bankroll: number }>('/api/poker/wallet')
+export interface WalletDTO {
+  bankroll: number
+  bonus_amount: number
+  /** Milliseconds until the bonus can be claimed again; 0 means ready now. */
+  bonus_ready_in_ms: number
 }
 
-export function topUpWallet(): Promise<{ bankroll: number }> {
-  return post<{ bankroll: number }>('/api/poker/wallet/topup')
+export function getWallet(): Promise<WalletDTO> {
+  return request<WalletDTO>('/api/poker/wallet')
+}
+
+export function topUpWallet(): Promise<WalletDTO> {
+  return post<WalletDTO>('/api/poker/wallet/topup')
 }
 
 export function startHand(code: string): Promise<{ started: boolean }> {

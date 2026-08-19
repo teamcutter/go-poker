@@ -13,19 +13,22 @@ import (
 
 const (
 	defaultChips = 1000
-	IdleGrace    = 30 * time.Second
-	AwayGrace    = 30 * time.Second
-	TurnLimit    = 30 * time.Second
-	reapInterval = 10 * time.Second
-	turnInterval = time.Second
+	// BonusChips is granted per claim, once per BonusInterval.
+	BonusChips = 500
+	// How often a player may claim the free chip bonus.
+	BonusInterval = 10 * time.Minute
+	IdleGrace     = 30 * time.Second
+	AwayGrace     = 30 * time.Second
+	TurnLimit     = 30 * time.Second
+	reapInterval  = 10 * time.Second
+	turnInterval  = time.Second
 )
 
 var (
-	ErrTableNotFound   = errors.New("table not found")
-	ErrNotEnoughChips  = errors.New("not enough chips")
-	ErrTopUpNotAllowed = errors.New("top-up is only available when you are out of chips")
-	ErrNotYourDeal     = errors.New("it is another player's turn to deal")
-	ErrChipsInPlay     = errors.New("you still have chips at a table")
+	ErrTableNotFound  = errors.New("table not found")
+	ErrNotEnoughChips = errors.New("not enough chips")
+	ErrBonusNotReady  = errors.New("free chips are not ready yet")
+	ErrNotYourDeal    = errors.New("it is another player's turn to deal")
 )
 
 type turnState struct {
@@ -43,6 +46,7 @@ type Service struct {
 	present    map[string]int
 	away       map[string]time.Time
 	turns      map[string]turnState
+	lastBonus  map[string]time.Time
 	wallets    map[string]int64
 	notifier   Notifier
 	now        func() time.Time
@@ -55,6 +59,7 @@ func NewService(notifier Notifier) *Service {
 		present:    make(map[string]int),
 		away:       make(map[string]time.Time),
 		turns:      make(map[string]turnState),
+		lastBonus:  make(map[string]time.Time),
 		wallets:    make(map[string]int64),
 		notifier:   notifier,
 		now:        time.Now,
@@ -255,11 +260,28 @@ func (s *Service) Bankroll(id string) int64 {
 	return s.balance(id)
 }
 
+func (s *Service) bonusReadyInLocked(id string) time.Duration {
+	last, ok := s.lastBonus[id]
+	if !ok {
+		return 0
+	}
+	if elapsed := s.now().Sub(last); elapsed < BonusInterval {
+		return BonusInterval - elapsed
+	}
+	return 0
+}
+
+// BonusReadyIn is how long until the player may claim again, zero when ready.
+func (s *Service) BonusReadyIn(id string) time.Duration {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.bonusReadyInLocked(id)
+}
+
 func (s *Service) TopUp(id string) (int64, error) {
 	s.mu.Lock()
-	// The bankroll is part of every viewer's table state, so a top-up has to be
-	// pushed out. Without this the client keeps rendering a stale zero and the
-	// player taps "get free chips" again, which is then correctly refused.
+	// The bankroll is part of every viewer's table state, so a claim has to be
+	// pushed out or the client keeps rendering a stale figure.
 	touched := make([]string, 0)
 	defer func() {
 		for _, code := range touched {
@@ -268,21 +290,17 @@ func (s *Service) TopUp(id string) (int64, error) {
 	}()
 	defer s.mu.Unlock()
 
-	if s.balance(id) > 0 {
-		return 0, ErrTopUpNotAllowed
+	if s.bonusReadyInLocked(id) > 0 {
+		return 0, ErrBonusNotReady
 	}
-	for _, tb := range s.tables {
-		if seat := tb.Spectate(id); seat >= 0 && tb.Players[seat].Stack > 0 {
-			return 0, ErrChipsInPlay
-		}
-	}
-	s.wallets[id] = defaultChips
+	s.wallets[id] = s.balance(id) + BonusChips
+	s.lastBonus[id] = s.now()
 	for code, tb := range s.tables {
 		if tb.Spectate(id) >= 0 {
 			touched = append(touched, code)
 		}
 	}
-	return defaultChips, nil
+	return s.wallets[id], nil
 }
 
 func (s *Service) CreateTable(maxSeats int, bigBlind int64) (*domainpoker.Table, error) {

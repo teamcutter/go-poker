@@ -30,3 +30,11 @@ export function phaseLabel(phase: string): string {
       return phase
   }
 }
+
+/** Renders a remaining duration as m:ss for a claim countdown. */
+export function countdown(ms: number): string {
+  const total = Math.ceil(Math.max(0, ms) / 1000)
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}

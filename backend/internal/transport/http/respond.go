@@ -47,10 +47,8 @@ func mapError(c echo.Context, err error) error {
 		return fail(c, http.StatusConflict, "not_enough_chips", "not enough chips")
 	case errors.Is(err, pokerapp.ErrNotYourDeal):
 		return fail(c, http.StatusConflict, "not_your_deal", "it is another player's turn to deal")
-	case errors.Is(err, pokerapp.ErrChipsInPlay):
-		return fail(c, http.StatusConflict, "chips_in_play", "you still have chips at a table — rejoin it or leave to cash them out")
-	case errors.Is(err, pokerapp.ErrTopUpNotAllowed):
-		return fail(c, http.StatusConflict, "topup_not_allowed", "free chips are only for players who have run out")
+	case errors.Is(err, pokerapp.ErrBonusNotReady):
+		return fail(c, http.StatusConflict, "bonus_not_ready", "your next free chips are not ready yet")
 	case errors.Is(err, domainpoker.ErrTableFull):
 		return fail(c, http.StatusConflict, "table_full", "table is full")
 	case errors.Is(err, domainpoker.ErrAlreadySeated):

@@ -37,6 +37,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   const [copied, setCopied] = useState(false)
   const [dealing, setDealing] = useState(false)
   const [rebuy, setRebuy] = useState<number | null>(null)
+  const [confirmLeave, setConfirmLeave] = useState(false)
   const [turnClock, setTurnClock] = useState<{ receivedAt: number; ms: number } | null>(null)
   // Set optimistically by a top-up and dropped as soon as the server echoes a
   // fresh table state, so the sheet never renders a stale zero bankroll.
@@ -140,6 +141,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   // and your stack stays locked at a table you are no longer watching.
   const leaveTable = async () => {
     haptic()
+    setConfirmLeave(false)
     try {
       await api.leaveTable(code)
     } catch (err) {
@@ -169,6 +171,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
       const res = await api.topUpWallet()
       setWalletOverride(res.bankroll)
       setRebuy(defaultBuyIn(res.bankroll))
+      haptic('medium')
     } catch (err) {
       hapticNotify('error')
       setConnectionError(apiErrorMessage(err))
@@ -252,6 +255,12 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   // gets the action; everyone else is told who they are waiting on.
   const iAmStarter = table !== null && me !== undefined && table.starter === me.seat
   const canDeal = handIdle && table !== null && table.players.length >= 2 && iAmStarter
+  // Chips already committed this hand sit in the pot, not in street_bet, which
+  // endStreet zeroes every street. So the amount at risk cannot be quoted as a
+  // figure without the server tracking per-hand contribution.
+  const inThePot =
+    table !== null && me !== undefined && !me.folded && !me.sitting_out && !handIdle
+
   const starterName =
     table && table.starter >= 0
       ? table.players[table.starter]?.id === user?.id
@@ -289,7 +298,14 @@ export default function TableScreen({ code, onLeave }: TableProps) {
               ? `${chips(Math.max(1, Math.floor(table.big_blind / 2)))}/${chips(table.big_blind)}`
               : '—'}
           </span>
-          <button className="icon-btn" onClick={leaveTable} aria-label="Leave table">
+          <button
+            className="icon-btn"
+            onClick={() => {
+              haptic()
+              setConfirmLeave(true)
+            }}
+            aria-label="Leave table"
+          >
             ✕
           </button>
         </div>
@@ -504,15 +520,47 @@ export default function TableScreen({ code, onLeave }: TableProps) {
         </div>
       </div>
 
+      {confirmLeave && (
+        <Sheet title="Leave the table?" onClose={() => setConfirmLeave(false)}>
+          <p className="faint" style={{ fontSize: 13.5, margin: '0 0 18px', lineHeight: 1.5 }}>
+            {inThePot ? (
+              <>
+                Everything you have already put in this pot stays in it — the hand finishes
+                without you. Only your remaining{' '}
+                <b className="num text-gold">{chips(me?.stack ?? 0)}</b> goes back to your
+                bankroll, so you forfeit the rest of your buy-in.
+              </>
+            ) : (
+              <>
+                Your <b className="num text-gold">{chips(me?.stack ?? 0)}</b> goes back to your
+                bankroll and your seat opens up for someone else.
+              </>
+            )}
+          </p>
+          <Button size="lg" block variant="danger" onClick={leaveTable}>
+            {inThePot ? 'Leave and forfeit the pot' : 'Leave table'}
+          </Button>
+          <Button
+            size="lg"
+            block
+            variant="ghost"
+            className="mt-8"
+            onClick={() => setConfirmLeave(false)}
+          >
+            Stay
+          </Button>
+        </Sheet>
+      )}
+
       {rebuy !== null && (
         <Sheet title="Re-buy" onClose={() => setRebuy(null)}>
           {bankroll <= 0 ? (
             <>
               <p className="faint" style={{ fontSize: 13.5, textAlign: 'center', margin: '0 0 18px' }}>
-                Your bankroll is empty. Grab a free stack to keep playing.
+                Your bankroll is empty. Free chips are available every 10 minutes.
               </p>
               <Button size="lg" block variant="gold" onClick={claimFreeChips}>
-                Get free chips
+                Claim free chips
               </Button>
             </>
           ) : (

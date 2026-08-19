@@ -104,7 +104,7 @@ func (h *PokerHandler) Wallet(c echo.Context) error {
 	if !allowed {
 		return fail(c, http.StatusUnauthorized, "unauthorized", "missing session")
 	}
-	return ok(c, http.StatusOK, map[string]any{"bankroll": h.service.Bankroll(claims.PublicID)})
+	return h.walletResponse(c, claims.PublicID)
 }
 
 func (h *PokerHandler) TopUp(c echo.Context) error {
@@ -112,11 +112,18 @@ func (h *PokerHandler) TopUp(c echo.Context) error {
 	if !allowed {
 		return fail(c, http.StatusUnauthorized, "unauthorized", "missing session")
 	}
-	bankroll, err := h.service.TopUp(claims.PublicID)
-	if err != nil {
+	if _, err := h.service.TopUp(claims.PublicID); err != nil {
 		return mapError(c, err)
 	}
-	return ok(c, http.StatusOK, map[string]any{"bankroll": bankroll})
+	return h.walletResponse(c, claims.PublicID)
+}
+
+func (h *PokerHandler) walletResponse(c echo.Context, userID string) error {
+	return ok(c, http.StatusOK, map[string]any{
+		"bankroll":          h.service.Bankroll(userID),
+		"bonus_amount":      pokerapp.BonusChips,
+		"bonus_ready_in_ms": h.service.BonusReadyIn(userID).Milliseconds(),
+	})
 }
 
 func (h *PokerHandler) StartHand(c echo.Context) error {

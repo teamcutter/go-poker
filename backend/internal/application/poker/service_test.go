@@ -39,21 +39,6 @@ func TestJoinRejectedWithoutChips(t *testing.T) {
 	}
 }
 
-func TestTopUpOnlyWhenBroke(t *testing.T) {
-	s := NewService(nil)
-	if _, err := s.TopUp("u1"); err != ErrTopUpNotAllowed {
-		t.Fatalf("expected refusal while the bankroll is funded, got %v", err)
-	}
-	s.wallets["u1"] = 0
-	got, err := s.TopUp("u1")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got != defaultChips {
-		t.Fatalf("expected a %d top-up, got %d", defaultChips, got)
-	}
-}
-
 func TestReapIdleClosesEmptyTableAfterGrace(t *testing.T) {
 	s := NewService(nil)
 	tb, _ := s.CreateTable(6, 10)
@@ -311,9 +296,6 @@ func TestSeatIsReclaimedWhenTheSocketNeverConnects(t *testing.T) {
 	if got := s.Bankroll("u1"); got != 0 {
 		t.Fatalf("expected the bankroll on the table, got %d", got)
 	}
-	if _, err := s.TopUp("u1"); err != ErrChipsInPlay {
-		t.Fatalf("expected the top-up refused while chips are seated, got %v", err)
-	}
 
 	s.ReapIdle(time.Now().Add(AwayGrace))
 
@@ -338,36 +320,72 @@ func TestConnectedPlayerKeepsSeatIndefinitely(t *testing.T) {
 	}
 }
 
-func TestTopUpPushesTheNewBankrollToWatchers(t *testing.T) {
+func TestBonusGrantsChipsThenCoolsDown(t *testing.T) {
 	s := NewService(nil)
-	notified := make([]string, 0)
-	s.SetNotifier(func(code string, tb *domainpoker.Table) {
-		// Mirrors the broadcaster, which re-enters the service for each viewer.
-		for _, p := range tb.Players {
-			_ = s.Bankroll(p.ID)
-		}
-		notified = append(notified, code)
-	})
+	base := time.Now()
+	s.now = func() time.Time { return base }
 
+	before := s.Bankroll("u1")
+	got, err := s.TopUp("u1")
+	if err != nil {
+		t.Fatalf("first claim should succeed: %v", err)
+	}
+	if got != before+BonusChips {
+		t.Fatalf("expected %d chips added, got %d from %d", BonusChips, got, before)
+	}
+
+	if _, err := s.TopUp("u1"); err != ErrBonusNotReady {
+		t.Fatalf("a second immediate claim must be refused, got %v", err)
+	}
+	if left := s.BonusReadyIn("u1"); left <= 0 || left > BonusInterval {
+		t.Fatalf("expected a countdown within the interval, got %v", left)
+	}
+}
+
+func TestBonusIsClaimableAgainAfterTheInterval(t *testing.T) {
+	s := NewService(nil)
+	base := time.Now()
+	s.now = func() time.Time { return base }
+	if _, err := s.TopUp("u1"); err != nil {
+		t.Fatal(err)
+	}
+
+	// One second short of the interval is still too early.
+	s.now = func() time.Time { return base.Add(BonusInterval - time.Second) }
+	if _, err := s.TopUp("u1"); err != ErrBonusNotReady {
+		t.Fatalf("claim just before the interval must be refused, got %v", err)
+	}
+
+	s.now = func() time.Time { return base.Add(BonusInterval) }
+	if left := s.BonusReadyIn("u1"); left != 0 {
+		t.Fatalf("expected the bonus ready, %v remaining", left)
+	}
+	if _, err := s.TopUp("u1"); err != nil {
+		t.Fatalf("claim after the interval should succeed: %v", err)
+	}
+}
+
+func TestBonusIsClaimableWithChipsAlreadyInPlay(t *testing.T) {
+	s := NewService(nil)
 	tb, _ := s.CreateTable(6, 10)
 	if err := s.Join(tb.Code, "u1", 1000); err != nil {
 		t.Fatal(err)
 	}
-	tb.Players[0].Stack = 0 // busted out
+	// The old rule refused while any chips sat at a table; a timed bonus does not.
+	if _, err := s.TopUp("u1"); err != nil {
+		t.Fatalf("a seated player should still be able to claim: %v", err)
+	}
+	if got := s.Bankroll("u1"); got != BonusChips {
+		t.Fatalf("expected %d in the bankroll, got %d", BonusChips, got)
+	}
+}
 
-	got, err := s.TopUp("u1")
-	if err != nil {
-		t.Fatalf("top-up after busting should succeed: %v", err)
+func TestBonusCooldownIsPerPlayer(t *testing.T) {
+	s := NewService(nil)
+	if _, err := s.TopUp("u1"); err != nil {
+		t.Fatal(err)
 	}
-	if got != defaultChips {
-		t.Fatalf("expected %d chips, got %d", defaultChips, got)
-	}
-	if len(notified) == 0 {
-		t.Fatal("a top-up must push fresh state, or the client keeps showing a zero bankroll")
-	}
-
-	// Second tap is correctly refused now that the player has chips again.
-	if _, err := s.TopUp("u1"); err != ErrTopUpNotAllowed {
-		t.Fatalf("expected the second top-up refused, got %v", err)
+	if _, err := s.TopUp("u2"); err != nil {
+		t.Fatalf("one player's claim must not block another: %v", err)
 	}
 }

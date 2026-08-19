@@ -8,7 +8,7 @@ import Sheet from '../components/Sheet'
 import Spinner from '../components/Spinner'
 import { useApp } from '../store'
 import { getTelegramName, haptic, hapticNotify } from '../telegram'
-import { chips } from '../utils/chips'
+import { chips, countdown } from '../utils/chips'
 
 interface LobbyProps {
   onOpen: (code: string) => void
@@ -32,6 +32,10 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
   // null means "not read yet" — distinct from a known-empty bankroll, so a
   // failed wallet fetch never masquerades as being broke and locks the lobby.
   const [bankroll, setBankroll] = useState<number | null>(null)
+  // Captured with the moment it was read, so the countdown ticks locally rather
+  // than needing the server polled every second.
+  const [bonus, setBonus] = useState<{ readAt: number; readyInMs: number; amount: number } | null>(null)
+  const [now, setNow] = useState(() => Date.now())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -66,7 +70,10 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
     void load()
     api
       .getWallet()
-      .then((w) => setBankroll(w.bankroll))
+      .then((w) => {
+        setBankroll(w.bankroll)
+        setBonus({ readAt: Date.now(), readyInMs: w.bonus_ready_in_ms, amount: w.bonus_amount })
+      })
       .catch(() => setBankroll(null))
     const timer = setInterval(() => {
       void load()
@@ -130,6 +137,7 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
     try {
       const res = await api.topUpWallet()
       setBankroll(res.bankroll)
+      setBonus({ readAt: Date.now(), readyInMs: res.bonus_ready_in_ms, amount: res.bonus_amount })
       haptic('medium')
     } catch (err) {
       hapticNotify('error')
@@ -138,6 +146,15 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
       setBusy(false)
     }
   }
+
+  const bonusIn = bonus ? Math.max(0, bonus.readyInMs - (now - bonus.readAt)) : 0
+  const bonusReady = bonus !== null && bonusIn <= 0
+
+  useEffect(() => {
+    if (bonusIn <= 0) return
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [bonusIn])
 
   const liveCount = tables.reduce((sum, t) => sum + t.players.length, 0)
   // A seat you already hold needs no buy-in — your chips are already on that
@@ -195,14 +212,21 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
           </Button>
         </div>
       ) : (
-        broke && (
+        bonus && (
           <div className="broke-banner">
             <p>
-              <b>You are out of chips</b>
-              Grab a free stack to keep playing.
+              <b>{broke ? 'You are out of chips' : `Free ${chips(bonus.amount)} chips`}</b>
+              {bonusReady
+                ? `Claim ${chips(bonus.amount)} now, then again every 10 minutes.`
+                : `Next claim in ${countdown(bonusIn)}.`}
             </p>
-            <Button size="sm" variant="gold" onClick={claimFreeChips} disabled={busy}>
-              Get chips
+            <Button
+              size="sm"
+              variant="gold"
+              onClick={claimFreeChips}
+              disabled={busy || !bonusReady}
+            >
+              {bonusReady ? 'Claim' : countdown(bonusIn)}
             </Button>
           </div>
         )
