@@ -10,14 +10,12 @@ import { applyTheme, getStartParam } from './telegram'
 export default function App() {
   const { token, booting } = useApp()
   const [tableCode, setTableCode] = useState<string | null>(null)
-  const [autoJoin, setAutoJoin] = useState<string | null>(null)
+  // Read once at mount rather than via an effect: the deep-link start param is
+  // fixed for a given launch, so storing it in state costs an extra render.
+  const [autoJoin] = useState<string | null>(() => getStartParam() || null)
 
   useEffect(() => {
     applyTheme()
-    const param = getStartParam()
-    if (param) {
-      setAutoJoin(param)
-    }
   }, [])
 
   if (booting) {

@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -24,7 +25,7 @@ func New(ctx context.Context, addr, password string) (*Client, error) {
 		Password: password,
 	})
 	if err := rdb.Ping(ctx).Err(); err != nil {
-		rdb.Close()
+		_ = rdb.Close()
 		return nil, fmt.Errorf("redis: ping: %w", err)
 	}
 	return &Client{rdb: rdb}, nil
@@ -68,7 +69,7 @@ func NewCache(c *Client) *Cache {
 
 func (c *Cache) GetJSON(ctx context.Context, key string, dst any) (bool, error) {
 	raw, err := c.rdb.Get(ctx, key).Bytes()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return false, nil
 	}
 	if err != nil {

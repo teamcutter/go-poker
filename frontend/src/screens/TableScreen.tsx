@@ -41,11 +41,8 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   // Set optimistically by a top-up and dropped as soon as the server echoes a
   // fresh table state, so the sheet never renders a stale zero bankroll.
   const [walletOverride, setWalletOverride] = useState<number | null>(null)
-  const [, forceTick] = useState(0)
+  const [now, setNow] = useState(() => Date.now())
   const socketRef = useRef<WebSocket | null>(null)
-  // Only cards added by the latest street should stagger; already-visible
-  // board cards must not wait behind an index-based delay.
-  const dealtBefore = useRef(0)
 
   const me = table?.players.find((p) => p.id === user?.id)
   const isMyTurn =
@@ -62,7 +59,12 @@ export default function TableScreen({ code, onLeave }: TableProps) {
       setWalletOverride(null)
       // The server sends milliseconds remaining rather than a wall-clock
       // deadline, so the countdown is immune to phone/server clock skew.
-      setTurnClock({ receivedAt: Date.now(), ms: msg.table.turn_ms_left })
+      const at = Date.now()
+      setTurnClock({ receivedAt: at, ms: msg.table.turn_ms_left })
+      // Re-baseline the tick clock too: it only advances while a countdown is
+      // running, so on the first hand it can still hold its mount-time value
+      // and make the remaining time read high until the next 250ms tick.
+      setNow(at)
     }
     if (msg.type === 'error') {
       hapticNotify('error')
@@ -106,14 +108,10 @@ export default function TableScreen({ code, onLeave }: TableProps) {
     if (isMyTurn) haptic('medium')
   }, [isMyTurn])
 
-  useEffect(() => {
-    dealtBefore.current = table?.board.length ?? 0
-  }, [table?.board.length])
-
   // Re-render while a clock is running so the countdown ticks down locally.
   useEffect(() => {
     if (!turnClock || turnClock.ms <= 0) return
-    const timer = setInterval(() => forceTick((v) => v + 1), 250)
+    const timer = setInterval(() => setNow(Date.now()), 250)
     return () => clearInterval(timer)
   }, [turnClock])
 
@@ -261,7 +259,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
         : shortId(table.players[table.starter]?.id)
       : null
 
-  const msLeft = turnClock ? Math.max(0, turnClock.ms - (Date.now() - turnClock.receivedAt)) : 0
+  const msLeft = turnClock ? Math.max(0, turnClock.ms - (now - turnClock.receivedAt)) : 0
   const secsLeft = Math.ceil(msLeft / 1000)
   const clockRunning = msLeft > 0 && table !== null && table.acting >= 0
   const lowClock = clockRunning && secsLeft <= 5
@@ -374,7 +372,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
                 code={card}
                 size="md"
                 animate
-                delay={Math.max(0, i - dealtBefore.current) * 90}
+                delay={table?.board.length === 3 ? i * 90 : 0}
                 {...cardState(card)}
               />
             ) : (

@@ -46,7 +46,7 @@ type Result struct {
 func (s *Service) Authenticate(ctx context.Context, initData string, tokenTTL time.Duration) (*Result, error) {
 	tgUser, err := s.validator.Validate(initData)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidInitData, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidInitData, err)
 	}
 
 	u, err := s.users.FindByID(ctx, tgUser.ID)

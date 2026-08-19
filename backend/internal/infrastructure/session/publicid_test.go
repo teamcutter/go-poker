@@ -27,7 +27,8 @@ func TestPublicIDNeverRevealsTheTelegramID(t *testing.T) {
 
 func TestPublicIDIsStablePerUserAndDistinctBetweenUsers(t *testing.T) {
 	m := NewManager("sign-secret", "id-secret", "gopoker", time.Hour)
-	if m.PublicID(42) != m.PublicID(42) {
+	first, second := m.PublicID(42), m.PublicID(42)
+	if first != second {
 		t.Fatal("public id must be stable, or a player loses their seat identity")
 	}
 	if m.PublicID(42) == m.PublicID(43) {

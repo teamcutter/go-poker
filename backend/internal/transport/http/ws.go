@@ -138,8 +138,7 @@ func (h *WSHandler) readLoop(code, userID string, cl *client) {
 		if err := json.Unmarshal(data, &msg); err != nil {
 			continue
 		}
-		switch msg.Type {
-		case "act":
+		if msg.Type == "act" {
 			if err := h.service.Act(code, userID, msg.Action, msg.Amount); err != nil {
 				h.sendError(cl, err)
 			}
@@ -171,13 +170,10 @@ func (h *WSHandler) sendState(cl *client, code string, tb *poker.Table) {
 }
 
 func (h *WSHandler) sendError(cl *client, err error) {
-	var msg string
-	switch {
-	case err == nil:
+	if err == nil {
 		return
-	default:
-		msg = err.Error()
 	}
+	msg := err.Error()
 	payload, _ := json.Marshal(wsMsg{Type: "error", Error: &msg})
 	select {
 	case cl.send <- payload:

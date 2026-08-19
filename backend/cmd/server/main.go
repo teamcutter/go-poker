@@ -31,15 +31,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer func() { _ = log.Sync() }()
-
 	if err := godotenv.Load(); err != nil {
 		log.Warn("no .env file found, using environment")
 	}
 
+	code := 0
 	if err := run(log); err != nil {
-		log.Fatal("server exited with error", zap.Error(err))
+		log.Error("server exited with error", zap.Error(err))
+		code = 1
 	}
+	_ = log.Sync()
+	os.Exit(code)
 }
 
 func run(log *zap.Logger) error {
