@@ -32,6 +32,9 @@ type SheetKind = 'create' | 'code' | 'buyin' | 'profile' | null
 export default function LobbyScreen({ onOpen, autoJoin, onAutoJoinSpent }: LobbyProps) {
   const { user } = useApp()
   const [tables, setTables] = useState<TableDTO[]>([])
+  // Whether a list has actually been read. Without it an empty `tables` from a
+  // failed fetch is indistinguishable from a genuinely closed table.
+  const [listed, setListed] = useState(false)
   // null means "not read yet" — distinct from a known-empty bankroll, so a
   // failed wallet fetch never masquerades as being broke and locks the lobby.
   const [bankroll, setBankroll] = useState<number | null>(null)
@@ -60,6 +63,7 @@ export default function LobbyScreen({ onOpen, autoJoin, onAutoJoinSpent }: Lobby
   const load = useCallback(async () => {
     try {
       setTables(await api.listTables())
+      setListed(true)
       setError(null)
     } catch (err) {
       setError(apiErrorMessage(err))
@@ -98,7 +102,14 @@ export default function LobbyScreen({ onOpen, autoJoin, onAutoJoinSpent }: Lobby
         onOpen(code)
       } catch (err) {
         hapticNotify('error')
-        setError(apiErrorMessage(err))
+        // A closed table is the ordinary end of a table's life, not a fault —
+        // and it is what a shared code or a re-opened invite usually hits.
+        // The bare "table not found" reads like something went wrong.
+        if (err instanceof api.ApiError && err.code === 'table_not_found') {
+          setError(tableClosedMessage(code))
+        } else {
+          setError(apiErrorMessage(err))
+        }
       } finally {
         setBusy(false)
       }
@@ -112,6 +123,15 @@ export default function LobbyScreen({ onOpen, autoJoin, onAutoJoinSpent }: Lobby
     // for a table that has since been reaped must not be retried either, or
     // every return to the lobby raises "table not found" again.
     onAutoJoinSpent?.()
+    // The list is already in hand by now, so an invite to a table that has
+    // closed is answered straight away rather than through a round-trip that
+    // could only come back 404. When the list could not be read, the join
+    // itself is the check — the server is the authority either way.
+    if (listed && !tables.some((t) => t.code === autoJoin)) {
+      hapticNotify('error')
+      setError(tableClosedMessage(autoJoin))
+      return
+    }
     void sitDown(autoJoin, defaultBuyIn(spendable))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoJoin, loading])
@@ -450,6 +470,12 @@ export default function LobbyScreen({ onOpen, autoJoin, onAutoJoinSpent }: Lobby
       )}
     </main>
   )
+}
+
+// Empty tables are closed automatically after a short grace period, so a stale
+// code is expected rather than exceptional. Say that, and point at the way out.
+function tableClosedMessage(code: string): string {
+  return `Table ${code} has closed. Start a new one or pick another below.`
 }
 
 function apiErrorMessage(err: unknown): string {
