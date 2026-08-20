@@ -561,6 +561,157 @@ select.input {
   margin-bottom: 12px;
 }
 
+/* ============================================================
+   Toasts — transient action errors
+   ============================================================ */
+.toast-layer {
+  position: fixed;
+  top: calc(10px + var(--safe-t));
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  /* The layer spans the width but must not swallow taps beside the toast. */
+  pointer-events: none;
+}
+
+.toast {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #241417, #1a1013);
+  border: 1px solid rgba(229, 72, 77, 0.45);
+  border-radius: var(--r-md);
+  padding: 11px 12px;
+  color: #ffb4b6;
+  font-size: 13.5px;
+  line-height: 1.35;
+  box-shadow: var(--sh-2);
+  pointer-events: auto;
+  animation: toast-in 0.42s var(--ease) both;
+}
+
+.toast-leaving {
+  animation: toast-out 0.2s ease-in both;
+}
+
+.toast-mark {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: toast-mark-pop 0.5s var(--ease) 0.08s both;
+}
+
+.toast-text {
+  flex: 1;
+}
+
+.toast-close {
+  flex: none;
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.5;
+  font-size: 13px;
+  line-height: 1;
+  padding: 3px;
+  cursor: pointer;
+}
+
+.toast-close:active {
+  opacity: 1;
+}
+
+/* Drains left to right so the remaining time is visible rather than guessed. */
+.toast-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--danger);
+  opacity: 0.65;
+  transform-origin: left;
+  animation: toast-timer var(--toast-ms, 4500ms) linear both;
+}
+
+.toast-leaving .toast-timer {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.94);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(3px) scale(1.015);
+  }
+  78% {
+    transform: translateY(-1px) scale(0.997);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toast-out {
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.96);
+  }
+}
+
+@keyframes toast-mark-pop {
+  0% {
+    transform: scale(0.2) rotate(-25deg);
+  }
+  60% {
+    transform: scale(1.18) rotate(6deg);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes toast-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast,
+  .toast-leaving,
+  .toast-mark {
+    animation-name: fade;
+    animation-duration: 0.18s;
+  }
+  .toast-leaving {
+    animation-direction: reverse;
+  }
+}
+
 .spinner {
   border: 2.5px solid var(--surface-3);
   border-top-color: var(--accent);

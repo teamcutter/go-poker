@@ -12,7 +12,7 @@ export default function App() {
   const [tableCode, setTableCode] = useState<string | null>(null)
   // Read once at mount rather than via an effect: the deep-link start param is
   // fixed for a given launch, so storing it in state costs an extra render.
-  const [autoJoin] = useState<string | null>(() => getStartParam() || null)
+  const [autoJoin, setAutoJoin] = useState<string | null>(() => getStartParam() || null)
 
   useEffect(() => {
     applyTheme()
@@ -38,5 +38,14 @@ export default function App() {
     )
   }
 
-  return <LobbyScreen onOpen={setTableCode} autoJoin={autoJoin} />
+  // The deep link is good for one journey. Leaving a table unmounts TableScreen
+  // and remounts the lobby, which would otherwise act on the link a second time
+  // and drag the player straight back into the table they just left.
+  return (
+    <LobbyScreen
+      onOpen={setTableCode}
+      autoJoin={autoJoin}
+      onAutoJoinSpent={() => setAutoJoin(null)}
+    />
+  )
 }

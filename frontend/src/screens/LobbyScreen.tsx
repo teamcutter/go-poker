@@ -6,6 +6,7 @@ import Button from '../components/Button'
 import BuyInPicker, { defaultBuyIn } from '../components/BuyInPicker'
 import Sheet from '../components/Sheet'
 import Spinner from '../components/Spinner'
+import Toast from '../components/Toast'
 import { useApp } from '../store'
 import { getTelegramName, haptic, hapticNotify } from '../telegram'
 import { chips, countdown, shortId } from '../utils/chips'
@@ -13,6 +14,8 @@ import { chips, countdown, shortId } from '../utils/chips'
 interface LobbyProps {
   onOpen: (code: string) => void
   autoJoin?: string | null
+  /** Marks the deep link as used, so returning here does not replay it. */
+  onAutoJoinSpent?: () => void
 }
 
 const SEAT_MIN = 2
@@ -26,7 +29,7 @@ const POLL_MS = 5000
 
 type SheetKind = 'create' | 'code' | 'buyin' | 'profile' | null
 
-export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
+export default function LobbyScreen({ onOpen, autoJoin, onAutoJoinSpent }: LobbyProps) {
   const { user } = useApp()
   const [tables, setTables] = useState<TableDTO[]>([])
   // null means "not read yet" — distinct from a known-empty bankroll, so a
@@ -50,6 +53,9 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
   // Only a confirmed zero blocks play; an unread bankroll must not.
   const broke = bankroll !== null && bankroll <= 0
   const spendable = bankroll ?? ASSUMED_BANKROLL
+
+  // Stable so Toast's dismiss timer is not restarted by every re-render.
+  const dismissError = useCallback(() => setError(null), [])
 
   const load = useCallback(async () => {
     try {
@@ -101,9 +107,12 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
   )
 
   useEffect(() => {
-    if (autoJoin && !loading) {
-      void sitDown(autoJoin, defaultBuyIn(spendable))
-    }
+    if (!autoJoin || loading) return
+    // Spend the link before acting on it, not after a successful join: a code
+    // for a table that has since been reaped must not be retried either, or
+    // every return to the lobby raises "table not found" again.
+    onAutoJoinSpent?.()
+    void sitDown(autoJoin, defaultBuyIn(spendable))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoJoin, loading])
 
@@ -203,7 +212,7 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
         <span className="eyebrow">Your bankroll</span>
       </div>
 
-      {error && <div className="error-banner">{error}</div>}
+      <Toast message={error} onDismiss={dismissError} />
 
       {seatedTable ? (
         <div className="broke-banner">

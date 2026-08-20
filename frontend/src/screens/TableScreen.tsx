@@ -6,6 +6,7 @@ import Button from '../components/Button'
 import BuyInPicker, { defaultBuyIn } from '../components/BuyInPicker'
 import CardView from '../components/CardView'
 import Sheet from '../components/Sheet'
+import Toast from '../components/Toast'
 import { useApp } from '../store'
 import { haptic, hapticNotify, inviteLink, shareInvite } from '../telegram'
 import { chips, phaseLabel, shortId } from '../utils/chips'
@@ -123,15 +124,8 @@ export default function TableScreen({ code, onLeave }: TableProps) {
     return () => clearInterval(timer)
   }, [turnClock])
 
-  // A rejected action is answered once and never mentioned again, and the
-  // banner has no dismiss of its own, so without this it sits over hands that
-  // have long since moved on. Losing the connection outlives the banner in the
-  // LIVE/OFFLINE tag, so nothing lasting is hidden by clearing it.
-  useEffect(() => {
-    if (!connectionError) return
-    const timer = setTimeout(() => setConnectionError(null), 5000)
-    return () => clearTimeout(timer)
-  }, [connectionError])
+  // Stable so Toast's dismiss timer is not restarted by every re-render.
+  const dismissError = useCallback(() => setConnectionError(null), [])
 
   const send = useCallback((action: string, amount?: number) => {
     const ws = socketRef.current
@@ -389,7 +383,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
         </div>
       </div>
 
-      {connectionError && <div className="error-banner">{connectionError}</div>}
+      <Toast message={connectionError} onDismiss={dismissError} />
 
       {/* Opponents, above the board */}
       <div className="opponents">
