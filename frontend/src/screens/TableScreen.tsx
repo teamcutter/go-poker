@@ -123,6 +123,16 @@ export default function TableScreen({ code, onLeave }: TableProps) {
     return () => clearInterval(timer)
   }, [turnClock])
 
+  // A rejected action is answered once and never mentioned again, and the
+  // banner has no dismiss of its own, so without this it sits over hands that
+  // have long since moved on. Losing the connection outlives the banner in the
+  // LIVE/OFFLINE tag, so nothing lasting is hidden by clearing it.
+  useEffect(() => {
+    if (!connectionError) return
+    const timer = setTimeout(() => setConnectionError(null), 5000)
+    return () => clearTimeout(timer)
+  }, [connectionError])
+
   const send = useCallback((action: string, amount?: number) => {
     const ws = socketRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return

@@ -505,3 +505,70 @@ func TestHeadsUpButtonPostsSmallBlindAndActsFirst(t *testing.T) {
 		t.Fatalf("heads-up button acts first preflop: acting=%d button=%d", tb.Acting, tb.Button)
 	}
 }
+
+// Regression: a stack smaller than one minimum raise used to be rejected by
+// raise, leaving the player unable to act at all — the client showed "All-in 5"
+// and the server answered ErrInvalidAmount.
+func TestAllInBelowMinRaiseIsLegal(t *testing.T) {
+	tb := NewTable("TEST", 6, 10)
+	sitAll(t, tb, 2)
+	if err := tb.StartHand(); err != nil {
+		t.Fatal(err)
+	}
+	// A fresh street with no bet yet, and the player to act holding less than
+	// the minimum raise.
+	tb.CurrentBet = 0
+	tb.MinRaise = 10
+	for _, pl := range tb.Players {
+		pl.StreetBet = 0
+		pl.HasActed = false
+	}
+	p := tb.Players[tb.Acting]
+	p.Stack = 5
+
+	if err := tb.Act(p.ID, "allin", 0); err != nil {
+		t.Fatalf("a short all-in must be legal, got %v", err)
+	}
+	if p.Stack != 0 || !p.AllIn {
+		t.Fatalf("expected an empty stack marked all-in, got stack=%d allin=%v", p.Stack, p.AllIn)
+	}
+	if tb.CurrentBet != 5 {
+		t.Fatalf("expected the all-in to become the bet to match, got %d", tb.CurrentBet)
+	}
+	if tb.MinRaise != 10 {
+		t.Fatalf("a short all-in must not lower the minimum raise, got %d", tb.MinRaise)
+	}
+}
+
+// Regression: allin passed the stack where raise expects the total to raise to,
+// so chips already committed on the street were double-counted and the player
+// was left holding chips after supposedly going all-in.
+func TestAllInIncludesChipsAlreadyCommitted(t *testing.T) {
+	tb := NewTable("TEST", 6, 10)
+	sitAll(t, tb, 2)
+	if err := tb.StartHand(); err != nil {
+		t.Fatal(err)
+	}
+	tb.CurrentBet = 20
+	tb.MinRaise = 10
+	for _, pl := range tb.Players {
+		pl.StreetBet = 0
+		pl.HasActed = false
+	}
+	p := tb.Players[tb.Acting]
+	p.StreetBet = 10
+	p.Stack = 30
+
+	if err := tb.Act(p.ID, "allin", 0); err != nil {
+		t.Fatalf("allin: %v", err)
+	}
+	if p.Stack != 0 || !p.AllIn {
+		t.Fatalf("all-in must commit the whole stack, got stack=%d allin=%v", p.Stack, p.AllIn)
+	}
+	if p.StreetBet != 40 {
+		t.Fatalf("expected 40 committed (10 already in plus 30), got %d", p.StreetBet)
+	}
+	if tb.CurrentBet != 40 {
+		t.Fatalf("expected the current bet to rise to 40, got %d", tb.CurrentBet)
+	}
+}

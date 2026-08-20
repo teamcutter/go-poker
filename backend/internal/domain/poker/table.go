@@ -534,15 +534,39 @@ func (t *Table) handleAction(i int, action string, amount int64) error {
 		}
 		return t.raise(i, amount)
 	case "allin":
-		if p.Stack > t.CurrentBet {
-			return t.raise(i, p.Stack)
-		}
-		t.post(i, p.Stack)
-		p.HasActed = true
-		t.advanceToNext()
-		return nil
+		return t.allIn(i)
 	}
 	return ErrInvalidAction
+}
+
+// allIn commits every remaining chip.
+//
+// It deliberately does not route through raise. raise enforces the full
+// min-raise increment, but a player whose entire stack falls short of that is
+// still entitled to push it in — going through raise handed them
+// ErrInvalidAmount and left them unable to act at all.
+func (t *Table) allIn(i int) error {
+	p := t.Players[i]
+	if p.Stack <= 0 {
+		return ErrInvalidAmount
+	}
+	// What this player will have wagered on this street once the stack is in.
+	// Chips already committed count towards it, so the stack alone understates
+	// the total and would leave an "all-in" player still holding chips.
+	total := p.StreetBet + p.Stack
+	p.HasActed = true
+	if total > t.CurrentBet {
+		// Only an all-in that covers a full raise reopens the betting and moves
+		// the minimum. A short one simply becomes the amount to match.
+		if total-t.CurrentBet >= t.MinRaise {
+			t.MinRaise = total - t.CurrentBet
+			t.LastAgg = i
+		}
+		t.CurrentBet = total
+	}
+	t.post(i, p.Stack)
+	t.advanceToNext()
+	return nil
 }
 
 func (t *Table) raise(i int, total int64) error {
