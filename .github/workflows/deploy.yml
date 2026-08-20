@@ -39,10 +39,13 @@ jobs:
         run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
 
       - name: Build
-        # VITE_API_BASE is inlined at build time, so it must be present here and
-        # not merely set on the Vercel project.
+        # These are inlined at build time, so they must be present here and not
+        # merely set on the Vercel project. An absent VITE_BOT_USERNAME does not
+        # fail the build — invites just fall back to copying the table code.
         env:
           VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          VITE_BOT_USERNAME: ${{ secrets.VITE_BOT_USERNAME }}
+          VITE_MINIAPP_NAME: ${{ secrets.VITE_MINIAPP_NAME }}
         run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
 
       - name: Deploy

@@ -7,7 +7,7 @@ import BuyInPicker, { defaultBuyIn } from '../components/BuyInPicker'
 import CardView from '../components/CardView'
 import Sheet from '../components/Sheet'
 import { useApp } from '../store'
-import { haptic, hapticNotify } from '../telegram'
+import { haptic, hapticNotify, inviteLink, shareInvite } from '../telegram'
 import { chips, phaseLabel, shortId } from '../utils/chips'
 
 interface TableProps {
@@ -204,10 +204,16 @@ export default function TableScreen({ code, onLeave }: TableProps) {
     }
   }
 
-  const copyCode = async () => {
+  // Invites degrade in three steps, best first: Telegram's own forward picker,
+  // then the clipboard with a tappable deep link, then the bare code for a
+  // friend to type in. Which one you get depends on whether a bot username is
+  // configured and whether we are running inside Telegram at all.
+  const invite = async () => {
+    haptic()
+    if (shareInvite(code, `Join my poker table ${code}`)) return
+    const link = inviteLink(code)
     try {
-      await navigator.clipboard.writeText(code)
-      haptic()
+      await navigator.clipboard.writeText(link || code)
       setCopied(true)
       setTimeout(() => setCopied(false), 1600)
     } catch {
@@ -281,6 +287,8 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   // gets the action; everyone else is told who they are waiting on.
   const iAmStarter = table !== null && me !== undefined && table.starter === me.seat
   const canDeal = handIdle && table !== null && table.players.length >= 2 && iAmStarter
+  // Short-handed and idle: nobody can deal until another player arrives.
+  const needsPlayers = table !== null && handIdle && table.players.length < 2
   // Chips already committed this hand sit in the pot, not in street_bet, which
   // endStreet zeroes every street. So the amount at risk cannot be quoted as a
   // figure without the server tracking per-hand contribution.
@@ -345,7 +353,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   return (
     <main className="table-screen is-fixed">
       <div className="table-topbar">
-        <button className="tag tag-code" onClick={copyCode}>
+        <button className="tag tag-code" onClick={invite}>
           {copied ? 'COPIED' : code}
         </button>
         <span className={`tag ${connected ? 'tag-live' : 'tag-off'}`}>
@@ -563,16 +571,22 @@ export default function TableScreen({ code, onLeave }: TableProps) {
             <Button block onClick={startHand} disabled={dealing}>
               {dealing ? 'Dealing…' : table?.phase === 'waiting' ? 'Deal first hand' : 'Deal next hand'}
             </Button>
+          ) : needsPlayers ? (
+            // A table one player short cannot deal, so the only useful action
+            // here is fetching someone. Promote it from a line of text to the
+            // primary button.
+            <Button block variant="gold" onClick={invite}>
+              Invite a friend
+              <small className="num">{code}</small>
+            </Button>
           ) : (
             <div className="waiting-strip">
               {!table
                 ? 'Joining table…'
                 : handIdle
-                  ? table.players.length < 2
-                    ? `Waiting for players — code ${code}`
-                    : starterName
-                      ? `Waiting for ${starterName} to deal`
-                      : 'Waiting for a funded player to deal'
+                  ? starterName
+                    ? `Waiting for ${starterName} to deal`
+                    : 'Waiting for a funded player to deal'
                   : me?.folded
                     ? 'You folded this hand'
                     : 'Waiting for other players…'}

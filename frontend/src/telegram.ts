@@ -16,6 +16,8 @@ export interface TelegramWebApp {
   setHeaderColor?(color: string): void
   setBackgroundColor?(color: string): void
   enableClosingConfirmation?(): void
+  /** Opens a t.me URL inside Telegram rather than punting to a browser. */
+  openTelegramLink?(url: string): void
 }
 
 declare global {
@@ -55,6 +57,41 @@ export function getInitData(): string {
 
 export function getStartParam(): string {
   return window.Telegram?.WebApp?.initDataUnsafe?.start_param ?? ''
+}
+
+// Who to address the deep link to. Both are inlined at build time, so changing
+// them needs a rebuild. Without a bot username there is no link to build at all,
+// and every invite quietly degrades to sharing the bare table code.
+const BOT_USERNAME = (import.meta.env.VITE_BOT_USERNAME ?? '').replace(/^@/, '').trim()
+const MINIAPP_NAME = (import.meta.env.VITE_MINIAPP_NAME ?? '').trim()
+
+/**
+ * A t.me link that opens the mini app straight into `code`. Telegram hands the
+ * value back as `start_param`, which App.tsx feeds to the lobby as `autoJoin` —
+ * so the recipient lands in the seat instead of retyping a code.
+ *
+ * Empty when no bot username is configured; callers fall back to the raw code.
+ */
+export function inviteLink(code: string): string {
+  if (!BOT_USERNAME) return ''
+  // Table codes are drawn from an alphanumeric alphabet, which is exactly what
+  // startapp permits, so no escaping is needed.
+  const target = MINIAPP_NAME ? `${BOT_USERNAME}/${MINIAPP_NAME}` : BOT_USERNAME
+  return `https://t.me/${target}?startapp=${code}`
+}
+
+/**
+ * Hands `code` to Telegram's own "forward to…" picker. Returns false when that
+ * is not possible — outside Telegram, or with no bot configured — so the caller
+ * can fall back to the clipboard.
+ */
+export function shareInvite(code: string, text: string): boolean {
+  const app = window.Telegram?.WebApp
+  const link = inviteLink(code)
+  if (!app?.openTelegramLink || !link) return false
+  const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
+  app.openTelegramLink(url)
+  return true
 }
 
 export function getTelegramName(): string | null {

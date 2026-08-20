@@ -40,6 +40,7 @@ Postgres holds **only** the `users` table, for authentication. All poker state �
 - Never trust client state: Telegram initData is validated server-side (HMAC), then a JWT session is issued.
 - `index.html` must load `telegram-web-app.js`; without it `window.Telegram` is absent and every client silently falls back to `VITE_DEV_TOKEN`, authenticating as one shared account.
 - `VITE_DEV_TOKEN` is gated behind `import.meta.env.DEV` so it cannot reach a production bundle, and `.env` is in `.dockerignore`.
+- Invite deep links are `t.me/<bot>[/<app>]?startapp=CODE`, built from `VITE_BOT_USERNAME`/`VITE_MINIAPP_NAME` and inlined at build time. Telegram returns the code as `start_param`, which `App.tsx` feeds to the lobby as `autoJoin`. Leaving the bot username unset is safe — invites degrade to copying the bare table code.
 - The response envelope and error codes must stay stable (the frontend depends on them).
 - `SESSION_SECRET` signs JWTs and is freely rotatable: rotating it only logs everyone out. It is the sole secret in the auth path.
 - Only `Claims.PublicID` may be published — a random UUID on the user row, carried in the token as `pid` so no lookup is needed per request. `Claims.UserID` is the raw Telegram id, the Postgres primary key, and must never reach a client or every opponent gains a permanent handle on the account.
