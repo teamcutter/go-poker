@@ -562,7 +562,7 @@ select.input {
 }
 
 /* ============================================================
-   Toasts — transient action errors
+   Toasts — transient action errors, Telegram-style
    ============================================================ */
 .toast-layer {
   position: fixed;
@@ -577,94 +577,85 @@ select.input {
   pointer-events: none;
 }
 
+/* Telegram's toast is a dark translucent pill over blurred content, letting the
+   icon rather than a coloured panel carry the meaning. */
 .toast {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  width: 100%;
+  gap: 11px;
   max-width: 420px;
-  overflow: hidden;
-  background: linear-gradient(180deg, #241417, #1a1013);
-  border: 1px solid rgba(229, 72, 77, 0.45);
-  border-radius: var(--r-md);
-  padding: 11px 12px;
-  color: #ffb4b6;
+  margin: 0;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: var(--r-pill);
+  background: rgba(20, 22, 27, 0.9);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  padding: 10px 17px 10px 13px;
+  color: #fff;
+  font: inherit;
   font-size: 13.5px;
+  font-weight: 500;
   line-height: 1.35;
-  box-shadow: var(--sh-2);
+  text-align: left;
+  letter-spacing: -0.01em;
+  box-shadow: 0 12px 34px -8px rgba(0, 0, 0, 0.75);
+  cursor: pointer;
   pointer-events: auto;
-  animation: toast-in 0.42s var(--ease) both;
+  animation: toast-in 0.46s var(--ease) both;
+}
+
+.toast:active {
+  transform: scale(0.98);
 }
 
 .toast-leaving {
-  animation: toast-out 0.2s ease-in both;
-}
-
-.toast-mark {
-  flex: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--danger);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  animation: toast-mark-pop 0.5s var(--ease) 0.08s both;
+  animation: toast-out 0.22s ease-in both;
 }
 
 .toast-text {
   flex: 1;
 }
 
-.toast-close {
+.toast-icon {
   flex: none;
-  background: none;
-  border: none;
-  color: inherit;
-  opacity: 0.5;
-  font-size: 13px;
-  line-height: 1;
-  padding: 3px;
-  cursor: pointer;
+  width: 21px;
+  height: 21px;
+  overflow: visible;
+  fill: none;
+  stroke: var(--danger);
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
-.toast-close:active {
-  opacity: 1;
+/* 2πr for r=10, so the ring can be drawn on rather than faded in. */
+.toast-icon-ring {
+  stroke-dasharray: 63;
+  animation: toast-draw-ring 0.55s var(--ease) both;
 }
 
-/* Drains left to right so the remaining time is visible rather than guessed. */
-.toast-timer {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  height: 2px;
-  width: 100%;
-  background: var(--danger);
-  opacity: 0.65;
-  transform-origin: left;
-  animation: toast-timer var(--toast-ms, 4500ms) linear both;
+.toast-icon-stem {
+  stroke-dasharray: 7;
+  animation: toast-draw-stem 0.26s ease-out 0.26s both;
 }
 
-.toast-leaving .toast-timer {
-  animation: none;
-  opacity: 0;
+.toast-icon-dot {
+  fill: var(--danger);
+  stroke: none;
+  transform-origin: 12px 16.7px;
+  animation: toast-dot-pop 0.32s var(--ease) 0.44s both;
 }
 
 @keyframes toast-in {
   0% {
     opacity: 0;
-    transform: translateY(-18px) scale(0.94);
+    transform: translateY(-130%) scale(0.9);
   }
-  55% {
+  62% {
     opacity: 1;
-    transform: translateY(3px) scale(1.015);
+    transform: translateY(7%) scale(1.02);
   }
-  78% {
-    transform: translateY(-1px) scale(0.997);
+  82% {
+    transform: translateY(-2%) scale(0.996);
   }
   100% {
     opacity: 1;
@@ -675,40 +666,56 @@ select.input {
 @keyframes toast-out {
   to {
     opacity: 0;
-    transform: translateY(-12px) scale(0.96);
+    transform: translateY(-130%) scale(0.92);
   }
 }
 
-@keyframes toast-mark-pop {
-  0% {
-    transform: scale(0.2) rotate(-25deg);
+@keyframes toast-draw-ring {
+  from {
+    stroke-dashoffset: 63;
+    transform: rotate(-90deg);
+    transform-origin: center;
   }
-  60% {
-    transform: scale(1.18) rotate(6deg);
+  to {
+    stroke-dashoffset: 0;
+    transform: rotate(-90deg);
+    transform-origin: center;
+  }
+}
+
+@keyframes toast-draw-stem {
+  from {
+    stroke-dashoffset: 7;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes toast-dot-pop {
+  0% {
+    transform: scale(0);
+  }
+  65% {
+    transform: scale(1.45);
   }
   100% {
     transform: scale(1);
   }
 }
 
-@keyframes toast-timer {
-  from {
-    transform: scaleX(1);
-  }
-  to {
-    transform: scaleX(0);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .toast,
-  .toast-leaving,
-  .toast-mark {
-    animation-name: fade;
-    animation-duration: 0.18s;
+  .toast {
+    animation: fade 0.18s ease both;
   }
   .toast-leaving {
-    animation-direction: reverse;
+    animation: fade 0.18s ease reverse both;
+  }
+  .toast-icon-ring,
+  .toast-icon-stem,
+  .toast-icon-dot {
+    animation: none;
+    stroke-dashoffset: 0;
   }
 }
 

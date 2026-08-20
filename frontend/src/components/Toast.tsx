@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
 
 interface ToastProps {
   /** Message to show; null dismisses it. */
@@ -10,7 +9,7 @@ interface ToastProps {
   duration?: number
 }
 
-export default function Toast({ message, onDismiss, duration = 4500 }: ToastProps) {
+export default function Toast({ message, onDismiss, duration = 4000 }: ToastProps) {
   // Held apart from `message` so the text survives the exit animation, which
   // plays after the owner has already cleared it.
   const [shown, setShown] = useState('')
@@ -31,25 +30,26 @@ export default function Toast({ message, onDismiss, duration = 4500 }: ToastProp
   if (!shown) return null
 
   return (
-    <div className="toast-layer">
-      <div
+    <div className="toast-layer" role="alert" aria-live="assertive">
+      <button
         className={`toast${message ? '' : ' toast-leaving'}`}
-        role="alert"
-        style={{ '--toast-ms': `${duration}ms` } as CSSProperties}
+        onClick={onDismiss}
         // The node outlives `message` so the exit can play; drop it once that
-        // animation finishes. The target check ignores the countdown bar's own
-        // animation bubbling up from inside.
+        // animation finishes. The target check ignores the icon's own strokes
+        // animating and bubbling up from inside.
         onAnimationEnd={(e) => {
           if (e.target === e.currentTarget && !message) setShown('')
         }}
       >
-        <span className="toast-mark">!</span>
+        {/* Drawn rather than faded in: the ring sweeps closed, then the stem
+            and dot land. Telegram animates its icons instead of its boxes. */}
+        <svg className="toast-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle className="toast-icon-ring" cx="12" cy="12" r="10" />
+          <line className="toast-icon-stem" x1="12" y1="6.8" x2="12" y2="13.4" />
+          <circle className="toast-icon-dot" cx="12" cy="16.7" r="1.15" />
+        </svg>
         <span className="toast-text">{shown}</span>
-        <button className="toast-close" onClick={onDismiss} aria-label="Dismiss">
-          ✕
-        </button>
-        <span className="toast-timer" />
-      </div>
+      </button>
     </div>
   )
 }
