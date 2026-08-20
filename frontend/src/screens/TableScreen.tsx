@@ -25,6 +25,8 @@ interface BetSheetState {
 const BOARD_SLOTS = 5
 /** Mirrors the server's TurnLimit; used only to scale the countdown bar. */
 const TURN_LIMIT_MS = 30_000
+/** How long a busted player keeps their seat before being returned to the lobby. */
+const REBUY_LIMIT_MS = 10_000
 /** Tap-to-add stakes in the bet sheet. */
 const BET_STEPS = [10, 25, 50, 100]
 
@@ -39,11 +41,16 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   const [rebuy, setRebuy] = useState<number | null>(null)
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [turnClock, setTurnClock] = useState<{ receivedAt: number; ms: number } | null>(null)
+  // Wall-clock instant the busted seat is given up; null when no clock is running.
+  const [rebuyDeadline, setRebuyDeadline] = useState<number | null>(null)
   // Set optimistically by a top-up and dropped as soon as the server echoes a
   // fresh table state, so the sheet never renders a stale zero bankroll.
   const [walletOverride, setWalletOverride] = useState<number | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const socketRef = useRef<WebSocket | null>(null)
+  // The expiry effect can re-run between the deadline passing and onLeave
+  // unmounting the screen; this makes the exit fire exactly once.
+  const droppedRef = useRef(false)
 
   const me = table?.players.find((p) => p.id === user?.id)
   const isMyTurn =
@@ -154,6 +161,22 @@ export default function TableScreen({ code, onLeave }: TableProps) {
     onLeave()
   }
 
+  // Forced exit when the re-buy clock runs out. Unlike leaveTable this returns
+  // to the lobby even if the request fails: the seat is dead either way, and
+  // the server's away-reaper releases it regardless, so refusing to move would
+  // just strand the player on a table they cannot play at.
+  const dropForNoRebuy = useCallback(async () => {
+    if (droppedRef.current) return
+    droppedRef.current = true
+    hapticNotify('warning')
+    try {
+      await api.leaveTable(code)
+    } catch {
+      // Nothing to recover — the reaper seats them out on its own.
+    }
+    onLeave()
+  }, [code, onLeave])
+
   const confirmRebuy = async () => {
     if (rebuy === null) return
     try {
@@ -171,6 +194,9 @@ export default function TableScreen({ code, onLeave }: TableProps) {
       const res = await api.topUpWallet()
       setWalletOverride(res.bankroll)
       setRebuy(defaultBuyIn(res.bankroll))
+      // Claiming is an action, not idling: restart the clock so the whole ten
+      // seconds is not spent on the claim, leaving none to size the buy-in.
+      setRebuyDeadline(Date.now() + REBUY_LIMIT_MS)
       haptic('medium')
     } catch (err) {
       hapticNotify('error')
@@ -260,6 +286,40 @@ export default function TableScreen({ code, onLeave }: TableProps) {
   // figure without the server tracking per-hand contribution.
   const inThePot =
     table !== null && me !== undefined && !me.folded && !me.sitting_out && !handIdle
+  // Busted: no chips left in the seat, and the table is between hands (or you
+  // have already been sat out). Nothing can be done from here except re-buy.
+  const busted =
+    table !== null && me !== undefined && me.stack <= 0 && (handIdle || me.sitting_out)
+
+  // A dead seat is not held indefinitely. Going broke opens the re-buy sheet and
+  // starts a short clock; buying back in stops it, letting it expire returns you
+  // to the lobby. The clock is anchored to the bust rather than to the sheet, so
+  // dismissing the sheet cannot be used to sit on a seat you cannot play.
+  useEffect(() => {
+    if (!busted) {
+      setRebuyDeadline(null)
+      return
+    }
+    if (rebuyDeadline !== null) return
+    setRebuyDeadline(Date.now() + REBUY_LIMIT_MS)
+    setRebuy(defaultBuyIn(bankroll))
+  }, [busted, rebuyDeadline, bankroll])
+
+  const rebuyMsLeft = rebuyDeadline === null ? 0 : Math.max(0, rebuyDeadline - now)
+  const rebuySecsLeft = Math.ceil(rebuyMsLeft / 1000)
+
+  // Ticks the shared `now` while the re-buy clock runs; the turn clock has its
+  // own effect for the same purpose and either may be the one driving renders.
+  useEffect(() => {
+    if (rebuyDeadline === null) return
+    const timer = setInterval(() => setNow(Date.now()), 250)
+    return () => clearInterval(timer)
+  }, [rebuyDeadline])
+
+  useEffect(() => {
+    if (rebuyDeadline === null || rebuyMsLeft > 0) return
+    void dropForNoRebuy()
+  }, [rebuyDeadline, rebuyMsLeft, dropForNoRebuy])
 
   const starterName =
     table && table.starter >= 0
@@ -487,7 +547,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
                 </Button>
               )}
             </div>
-          ) : me && me.stack <= 0 && (handIdle || me.sitting_out) ? (
+          ) : busted ? (
             <Button
               block
               variant="gold"
@@ -497,6 +557,7 @@ export default function TableScreen({ code, onLeave }: TableProps) {
               }}
             >
               Re-buy to keep playing
+              {rebuyDeadline !== null && <small className="num">{rebuySecsLeft}s</small>}
             </Button>
           ) : canDeal ? (
             <Button block onClick={startHand} disabled={dealing}>
@@ -553,7 +614,19 @@ export default function TableScreen({ code, onLeave }: TableProps) {
       )}
 
       {rebuy !== null && (
-        <Sheet title="Re-buy" onClose={() => setRebuy(null)}>
+        <Sheet
+          title={rebuyDeadline !== null ? `Re-buy · ${rebuySecsLeft}s` : 'Re-buy'}
+          onClose={() => setRebuy(null)}
+        >
+          {rebuyDeadline !== null && (
+            <p
+              className={`faint${rebuySecsLeft <= 3 ? ' text-gold' : ''}`}
+              style={{ fontSize: 12.5, textAlign: 'center', margin: '0 0 14px' }}
+            >
+              Buy back in within <b className="num">{rebuySecsLeft}s</b> or your seat is released
+              and you go back to the lobby.
+            </p>
+          )}
           {bankroll <= 0 ? (
             <>
               <p className="faint" style={{ fontSize: 13.5, textAlign: 'center', margin: '0 0 18px' }}>
