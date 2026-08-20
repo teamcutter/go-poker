@@ -8,7 +8,7 @@ import CardView from '../components/CardView'
 import Sheet from '../components/Sheet'
 import { useApp } from '../store'
 import { haptic, hapticNotify } from '../telegram'
-import { chips, phaseLabel } from '../utils/chips'
+import { chips, phaseLabel, shortId } from '../utils/chips'
 
 interface TableProps {
   code: string
@@ -739,11 +739,6 @@ function renderOpponentCards(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
-}
-
-function shortId(id?: string): string {
-  if (!id) return '—'
-  return id.slice(0, 4).toUpperCase()
 }
 
 function apiErrorMessage(err: unknown): string {

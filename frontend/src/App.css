@@ -400,6 +400,73 @@ select.input {
   letter-spacing: -0.01em;
 }
 
+/* Wraps the header avatar so it reads as a control without restyling Avatar
+   itself, which is also used for opponents, where it is not interactive. */
+.avatar-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 0;
+  transition: transform 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+
+.avatar-btn:active {
+  transform: scale(0.92);
+}
+
+.avatar-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 16px;
+}
+
+.profile-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.profile-handle {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.profile-rows {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 2px 13px;
+  margin-bottom: 4px;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 0;
+  font-size: 13.5px;
+  color: var(--text-dim);
+}
+
+.profile-row + .profile-row {
+  border-top: 1px solid var(--border);
+}
+
+.profile-row b {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .broke-banner {
   display: flex;
   align-items: center;

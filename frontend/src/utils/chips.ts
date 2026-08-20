@@ -31,6 +31,12 @@ export function phaseLabel(phase: string): string {
   }
 }
 
+/** The short tag other players see at a table, derived from the public id. */
+export function shortId(id?: string): string {
+  if (!id) return '—'
+  return id.slice(0, 4).toUpperCase()
+}
+
 /** Renders a remaining duration as m:ss for a claim countdown. */
 export function countdown(ms: number): string {
   const total = Math.ceil(Math.max(0, ms) / 1000)

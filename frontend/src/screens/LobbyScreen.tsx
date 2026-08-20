@@ -8,7 +8,7 @@ import Sheet from '../components/Sheet'
 import Spinner from '../components/Spinner'
 import { useApp } from '../store'
 import { getTelegramName, haptic, hapticNotify } from '../telegram'
-import { chips, countdown } from '../utils/chips'
+import { chips, countdown, shortId } from '../utils/chips'
 
 interface LobbyProps {
   onOpen: (code: string) => void
@@ -24,7 +24,7 @@ const ASSUMED_BANKROLL = 1000
  *  idling in the lobby still leaves room for joining, leaving and dealing. */
 const POLL_MS = 5000
 
-type SheetKind = 'create' | 'code' | 'buyin' | null
+type SheetKind = 'create' | 'code' | 'buyin' | 'profile' | null
 
 export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
   const { user } = useApp()
@@ -183,7 +183,16 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
             {loading ? 'Looking for games…' : `${tables.length} open · ${liveCount} playing`}
           </div>
         </div>
-        <Avatar id={user?.id ?? displayName} label={displayName} size={38} />
+        <button
+          className="avatar-btn"
+          onClick={() => {
+            haptic()
+            setSheet('profile')
+          }}
+          aria-label="Your profile"
+        >
+          <Avatar id={user?.id ?? displayName} label={displayName} size={38} />
+        </button>
       </div>
 
       <div className="space-between" style={{ marginBottom: 14 }}>
@@ -309,6 +318,45 @@ export default function LobbyScreen({ onOpen, autoJoin }: LobbyProps) {
         </button>
         )
       })}
+
+      {sheet === 'profile' && (
+        <Sheet title="Profile" onClose={() => setSheet(null)}>
+          <div className="profile-head">
+            <Avatar id={user?.id ?? displayName} label={displayName} size={58} />
+            <div>
+              <div className="profile-name">{displayName}</div>
+              {user?.username && <div className="profile-handle">@{user.username}</div>}
+            </div>
+          </div>
+
+          <div className="profile-rows">
+            {/* The four-character tag is all opponents ever see of you, so it is
+                worth showing here — it is how someone at a table refers to you. */}
+            <div className="profile-row">
+              <span>Player tag</span>
+              <b className="num">{shortId(user?.id)}</b>
+            </div>
+            <div className="profile-row">
+              <span>Bankroll</span>
+              <b className="num">{bankroll === null ? '…' : chips(bankroll)}</b>
+            </div>
+            {seatedTable && (
+              <div className="profile-row">
+                <span>In play at {seatedTable.code}</span>
+                <b className="num">{chips(mySeatIn(seatedTable)?.stack ?? 0)}</b>
+              </div>
+            )}
+            {bonus && (
+              <div className="profile-row">
+                <span>Free chips</span>
+                <b className="num">
+                  {bonusReady ? `${chips(bonus.amount)} ready` : `in ${countdown(bonusIn)}`}
+                </b>
+              </div>
+            )}
+          </div>
+        </Sheet>
+      )}
 
       {sheet === 'create' && (
         <Sheet title="New table" onClose={() => setSheet(null)}>
