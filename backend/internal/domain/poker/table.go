@@ -108,6 +108,15 @@ func (t *Table) Sit(id string, stack int64) error {
 		return ErrInvalidAmount
 	}
 	p := &Player{ID: id, Seat: len(t.Players), Stack: stack}
+	// Arriving mid-hand means holding no cards in it, so the rest of the hand is
+	// spent watching; the next StartHand clears both flags for any funded seat
+	// and deals them in. Folded is what does the real work — the betting loops
+	// skip on Folded || AllIn, and without it the newcomer would be handed the
+	// action with an empty hand and stall the street.
+	if t.Phase >= PhasePreflop && t.Phase < PhaseShowdown {
+		p.SittingOut = true
+		p.Folded = true
+	}
 	t.Players = append(t.Players, p)
 	return nil
 }

@@ -572,3 +572,53 @@ func TestAllInIncludesChipsAlreadyCommitted(t *testing.T) {
 		t.Fatalf("expected the current bet to rise to 40, got %d", tb.CurrentBet)
 	}
 }
+
+// Someone who sits down while a hand is running has no cards in it, so they
+// must watch rather than be dealt the action — previously they were handed the
+// turn with an empty hand and the street could not complete.
+func TestSitMidHandSpectatesUntilTheNextDeal(t *testing.T) {
+	tb := NewTable("TEST", 6, 10)
+	sitAll(t, tb, 2)
+	if err := tb.StartHand(); err != nil {
+		t.Fatal(err)
+	}
+	if err := tb.Sit("Z", 200); err != nil {
+		t.Fatalf("sit: %v", err)
+	}
+	z := tb.Players[tb.seatIndex("Z")]
+	if !z.SittingOut {
+		t.Fatal("a mid-hand arrival should be sitting out")
+	}
+	if z.Hole[0] != (Card{}) {
+		t.Fatal("a mid-hand arrival must not hold cards")
+	}
+
+	for i := 0; i < 100 && tb.Phase < PhaseShowdown; i++ {
+		p := tb.currentPlayer()
+		if p == nil {
+			break
+		}
+		if p.ID == "Z" {
+			t.Fatal("the spectator was given the turn")
+		}
+		if tb.CurrentBet > p.StreetBet {
+			tb.Act(p.ID, "call", 0)
+		} else {
+			tb.Act(p.ID, "check", 0)
+		}
+	}
+	if tb.Phase < PhaseShowdown {
+		t.Fatalf("hand stalled at %v — the spectator blocked the street", tb.Phase)
+	}
+
+	// The wait is one hand long: the next deal brings them in.
+	if err := tb.StartHand(); err != nil {
+		t.Fatalf("start next hand: %v", err)
+	}
+	if z.SittingOut || z.Folded {
+		t.Fatalf("expected to be dealt in, got sittingOut=%v folded=%v", z.SittingOut, z.Folded)
+	}
+	if z.Hole[0] == (Card{}) {
+		t.Fatal("expected hole cards on the next hand")
+	}
+}

@@ -508,8 +508,10 @@ export default function TableScreen({ code, onLeave }: TableProps) {
               ))
             ) : (
               <>
-                <CardView code="" hidden size="lg" />
-                <CardView code="" hidden size="lg" />
+                {/* Dimmed while sitting out, so the placeholders do not read as
+                    a hand you are holding in a hand you are not in. */}
+                <CardView code="" hidden size="lg" dimmed={me?.sitting_out} />
+                <CardView code="" hidden size="lg" dimmed={me?.sitting_out} />
               </>
             )}
           </div>
@@ -597,9 +599,13 @@ export default function TableScreen({ code, onLeave }: TableProps) {
                   ? starterName
                     ? `Waiting for ${starterName} to deal`
                     : 'Waiting for a funded player to deal'
-                  : me?.folded
-                    ? 'You folded this hand'
-                    : 'Waiting for other players…'}
+                  : me?.sitting_out
+                    ? // Reaching here with a stack means a mid-hand arrival: a
+                      // busted seat has already been caught by `busted` above.
+                      'Watching this hand — you are in on the next one'
+                    : me?.folded
+                      ? 'You folded this hand'
+                      : 'Waiting for other players…'}
             </div>
           )}
         </div>
