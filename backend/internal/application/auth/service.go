@@ -60,7 +60,6 @@ func (s *Service) Authenticate(ctx context.Context, initData string, tokenTTL ti
 	}
 
 	token, err := s.sessions.Create(session.Claims{
-		UserID:    u.ID,
 		PublicID:  u.PublicID,
 		ExpiresAt: s.now().Add(tokenTTL),
 	})

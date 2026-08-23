@@ -2,7 +2,6 @@ package session
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -21,22 +20,13 @@ func NewManager(secret, issuer string, ttl time.Duration) *Manager {
 	return &Manager{secret: []byte(secret), issuer: issuer, ttl: ttl, nowFunc: time.Now}
 }
 
-type jwtClaims struct {
-	// The published player id, so no database read is needed per request.
-	PublicID string `json:"pid"`
-	jwt.RegisteredClaims
-}
-
 func (m *Manager) Create(c domainsession.Claims) (string, error) {
 	now := m.nowFunc()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwtClaims{
-		PublicID: c.PublicID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			Issuer:    m.issuer,
-			Subject:   strconv.FormatInt(c.UserID, 10),
-			IssuedAt:  jwt.NewNumericDate(now),
-			ExpiresAt: jwt.NewNumericDate(c.ExpiresAt),
-		},
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
+		Issuer:    m.issuer,
+		Subject:   c.PublicID,
+		IssuedAt:  jwt.NewNumericDate(now),
+		ExpiresAt: jwt.NewNumericDate(c.ExpiresAt),
 	})
 	signed, err := token.SignedString(m.secret)
 	if err != nil {
@@ -46,7 +36,7 @@ func (m *Manager) Create(c domainsession.Claims) (string, error) {
 }
 
 func (m *Manager) Parse(raw string) (domainsession.Claims, error) {
-	token, err := jwt.ParseWithClaims(raw, &jwtClaims{}, func(t *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(raw, &jwt.RegisteredClaims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, domainsession.ErrInvalidSession
 		}
@@ -56,19 +46,17 @@ func (m *Manager) Parse(raw string) (domainsession.Claims, error) {
 		return domainsession.Claims{}, domainsession.ErrInvalidSession
 	}
 
-	claims, ok := token.Claims.(*jwtClaims)
+	claims, ok := token.Claims.(*jwt.RegisteredClaims)
 	if !ok || !token.Valid {
 		return domainsession.Claims{}, domainsession.ErrInvalidSession
 	}
 
-	userID, err := strconv.ParseInt(claims.Subject, 10, 64)
-	if err != nil {
+	if claims.Subject == "" {
 		return domainsession.Claims{}, domainsession.ErrInvalidSession
 	}
 
 	return domainsession.Claims{
-		UserID:    userID,
-		PublicID:  claims.PublicID,
+		PublicID:  claims.Subject,
 		ExpiresAt: claims.ExpiresAt.Time,
 	}, nil
 }

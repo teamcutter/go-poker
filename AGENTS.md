@@ -43,7 +43,7 @@ Postgres holds **only** the `users` table, for authentication. All poker state �
 - Invite deep links are `t.me/<bot>[/<app>]?startapp=CODE`, built from `VITE_BOT_USERNAME`/`VITE_MINIAPP_NAME` and inlined at build time. Telegram returns the code as `start_param`, which `App.tsx` feeds to the lobby as `autoJoin`. Leaving the bot username unset is safe — invites degrade to copying the bare table code.
 - The response envelope and error codes must stay stable (the frontend depends on them).
 - `SESSION_SECRET` signs JWTs and is freely rotatable: rotating it only logs everyone out. It is the sole secret in the auth path.
-- Only `Claims.PublicID` may be published — a random UUID on the user row, carried in the token as `pid` so no lookup is needed per request. `Claims.UserID` is the raw Telegram id, the Postgres primary key, and must never reach a client or every opponent gains a permanent handle on the account.
+- Only `Claims.PublicID` may be published — a random UUID on the user row, carried as the JWT's `sub` so no lookup is needed per request. The raw Telegram id is the Postgres primary key and never leaves the server: not in a DTO, or every opponent gains a permanent handle on the account, and not in the token either, since a JWT payload is base64 rather than encrypted and its holder can read anything put there. Nothing outside `internal/application/auth` and the store needs it.
 
 ## API surface
 `POST /api/auth/telegram`, `GET /healthz`.

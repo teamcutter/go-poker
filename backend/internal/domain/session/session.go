@@ -8,7 +8,6 @@ import (
 var ErrInvalidSession = errors.New("invalid session")
 
 type Claims struct {
-	UserID    int64
 	PublicID  string
 	ExpiresAt time.Time
 }
