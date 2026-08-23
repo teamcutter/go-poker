@@ -5,14 +5,15 @@ import TableScreen from './screens/TableScreen'
 import Spinner from './components/Spinner'
 import ErrorBoundary from './components/ErrorBoundary'
 import { useApp } from './store'
-import { applyTheme, getStartParam } from './telegram'
+import { applyTheme, markInviteUsed, pendingInvite } from './telegram'
 
 export default function App() {
   const { token, booting } = useApp()
   const [tableCode, setTableCode] = useState<string | null>(null)
   // Read once at mount rather than via an effect: the deep-link start param is
   // fixed for a given launch, so storing it in state costs an extra render.
-  const [autoJoin, setAutoJoin] = useState<string | null>(() => getStartParam() || null)
+  // pendingInvite, not getStartParam: a reload must not re-open the invite.
+  const [autoJoin, setAutoJoin] = useState<string | null>(() => pendingInvite() || null)
 
   useEffect(() => {
     applyTheme()
@@ -40,12 +41,17 @@ export default function App() {
 
   // The deep link is good for one journey. Leaving a table unmounts TableScreen
   // and remounts the lobby, which would otherwise act on the link a second time
-  // and drag the player straight back into the table they just left.
+  // and drag the player straight back into the table they just left. Spending it
+  // is written down as well as dropped from state, so a reload of this same
+  // launch does not resurrect it.
   return (
     <LobbyScreen
       onOpen={setTableCode}
       autoJoin={autoJoin}
-      onAutoJoinSpent={() => setAutoJoin(null)}
+      onAutoJoinSpent={() => {
+        if (autoJoin) markInviteUsed(autoJoin)
+        setAutoJoin(null)
+      }}
     />
   )
 }

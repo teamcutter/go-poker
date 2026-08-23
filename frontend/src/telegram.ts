@@ -59,6 +59,51 @@ export function getStartParam(): string {
   return window.Telegram?.WebApp?.initDataUnsafe?.start_param ?? ''
 }
 
+const INVITE_KEY = 'gopoker.invite'
+
+/**
+ * Identifies one launch of the mini app. Telegram signs fresh initData every
+ * time the link is tapped but keeps it across a reload of the WebView, so the
+ * hash tells "the user opened the invite again" apart from "the page reloaded".
+ * Empty outside Telegram, where there is no start_param to guard anyway.
+ */
+function launchKey(code: string): string {
+  const hash = new URLSearchParams(window.Telegram?.WebApp?.initData ?? '').get('hash') ?? ''
+  return hash ? `${hash}:${code}` : ''
+}
+
+/**
+ * The invite code this launch should act on, or '' when there is none left.
+ *
+ * start_param is sticky: it is still there after a reload, hours later, long
+ * after the table has been reaped. Reading it raw meant every reload replayed
+ * the invite — pulling a player out of the room they were in and back to the
+ * invite's room, or raising "that table has closed" over and over. Once spent,
+ * the invite stays spent until the link is genuinely tapped again.
+ */
+export function pendingInvite(): string {
+  const code = getStartParam()
+  if (!code) return ''
+  const key = launchKey(code)
+  try {
+    if (key && localStorage.getItem(INVITE_KEY) === key) return ''
+  } catch {
+    // Storage walled off; replaying the invite beats losing it.
+  }
+  return code
+}
+
+/** Records `code` as acted on, so reloads of this launch ignore it. */
+export function markInviteUsed(code: string): void {
+  const key = launchKey(code)
+  if (!key) return
+  try {
+    localStorage.setItem(INVITE_KEY, key)
+  } catch {
+    // Nothing to fall back to — the invite simply stays replayable.
+  }
+}
+
 // Who to address the deep link to. Both are inlined at build time, so changing
 // them needs a rebuild. Without a bot username there is no link to build at all,
 // and every invite quietly degrades to sharing the bare table code.
