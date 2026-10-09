@@ -384,7 +384,10 @@ func TestScenario20009WebSocketReceivesTableUpdates(t *testing.T) {
 	a.request(t, http.MethodPost, "/api/tables/"+code+"/join", owner, map[string]int{"buy_in": 200})
 	a.request(t, http.MethodPost, "/api/tables/"+code+"/join", guest, map[string]int{"buy_in": 200})
 	wsURL := "ws" + strings.TrimPrefix(a.server.URL, "http") + "/api/ws/tables/" + code + "?token=" + url.QueryEscape(guest)
-	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	conn, response, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if response != nil && response.Body != nil {
+		_ = response.Body.Close()
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
