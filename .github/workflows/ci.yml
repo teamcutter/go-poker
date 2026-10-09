@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'test/**']
   pull_request:
 
 concurrency:
@@ -70,6 +70,9 @@ jobs:
 
       - name: Type-check
         run: npm run typecheck
+
+      - name: Scenario tests
+        run: npm test
 
       - name: Build
         run: npm run build
