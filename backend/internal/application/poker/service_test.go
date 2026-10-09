@@ -192,7 +192,7 @@ func TestDealRightRotatesEachRound(t *testing.T) {
 	s := NewService(nil)
 	tb, _ := s.CreateTable(6, 10)
 	for _, id := range []string{"u1", "u2", "u3"} {
-		if err := s.Join(tb.Code, id, 4000); err != nil {
+		if err := s.Join(tb.Code, id, 1000); err != nil {
 			t.Fatal(err)
 		}
 	}

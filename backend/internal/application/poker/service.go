@@ -360,7 +360,7 @@ func (s *Service) Join(code, userID string, buyIn int64) error {
 		buyIn = defaultChips
 	}
 	if buyIn > bankroll {
-		buyIn = bankroll
+		return ErrNotEnoughChips
 	}
 	if buyIn <= 0 {
 		return ErrNotEnoughChips
